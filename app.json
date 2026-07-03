@@ -1,0 +1,32 @@
+{
+  "expo": {
+    "name": "Weekend League",
+    "slug": "weekend-league",
+    "version": "0.1.0",
+    "scheme": "weekendleague",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.weekendleague.app"
+    },
+    "android": {
+      "package": "com.weekendleague.app",
+      "adaptiveIcon": {
+        "backgroundColor": "#111A2E"
+      }
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "static"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}
