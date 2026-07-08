@@ -3,7 +3,6 @@
 -- handle_new_user trigger, and the first admin is granted manually
 -- (see PHASE1_SETUP.md §4).
 --
--- Phase 2 adds the current season here, e.g.:
---   insert into seasons (year, name) values (2026, '2026 Season')
---     on conflict (year) do nothing;
+-- Phase 2 seeds the 2026 season inside migration 0003_seasons.sql (idempotent,
+-- so it also lands on the hosted project via `supabase db push`).
 -- Phase 6 seeds the league-wide chat channel.

@@ -24,9 +24,14 @@ export default function ProfileScreen() {
         </View>
 
         {isAdmin ? (
-          <Link href="/admin/members" asChild>
-            <Button title="Admin · Members" variant="ghost" />
-          </Link>
+          <View className="gap-3">
+            <Link href="/admin/members" asChild>
+              <Button title="Admin · Members" variant="ghost" />
+            </Link>
+            <Link href="/admin/baselines" asChild>
+              <Button title="Admin · Baselines" variant="ghost" />
+            </Link>
+          </View>
         ) : null}
 
         <View className="flex-1 justify-end pb-6">

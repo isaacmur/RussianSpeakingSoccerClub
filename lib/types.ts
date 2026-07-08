@@ -14,6 +14,21 @@ export type Profile = {
   created_at: string;
 };
 
+// The six manually-entered baseline stats, per player per season.
+export type BaselineStats = {
+  games_played: number;
+  wins: number;
+  draws: number;
+  losses: number;
+  plus_minus: number;
+  goals: number;
+};
+
+export type SeasonBaseline = BaselineStats & {
+  season_id: string;
+  user_id: string;
+};
+
 export type LeaderboardRow = {
   user_id: string;
   display_name: string;

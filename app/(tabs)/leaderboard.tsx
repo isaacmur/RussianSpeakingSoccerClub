@@ -1,15 +1,14 @@
 import { View } from "react-native";
-import { Heading, Screen, Subtle } from "@/components/ui";
+import { Leaderboard } from "@/components/leaderboard";
+import { Heading, Screen } from "@/components/ui";
 
 export default function MemberLeaderboard() {
   return (
     <Screen>
-      <View className="flex-1 justify-center gap-4">
+      <View className="pt-1">
         <Heading>Table</Heading>
-        <View className="rounded-xl border border-line bg-card p-6">
-          <Subtle>Standings load here in Phase 2.</Subtle>
-        </View>
       </View>
+      <Leaderboard />
     </Screen>
   );
 }

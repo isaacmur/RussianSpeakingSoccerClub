@@ -12,6 +12,7 @@ export default function AdminLayout() {
       }}
     >
       <Stack.Screen name="members" options={{ title: "Members" }} />
+      <Stack.Screen name="baselines" options={{ title: "Baselines" }} />
     </Stack>
   );
 }

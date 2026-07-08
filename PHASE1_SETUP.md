@@ -1,9 +1,13 @@
-# Phase 1 — Run & wire-up
+# Phase 1 — Run & wire-up (hosted Supabase)
 
 Phase 1 is code-complete: Expo app scaffold, full DB schema, RLS helpers +
 profiles policies, email/password auth, status-based routing, and the admin
-members panel. Connections to a live Supabase project are deferred — do the
-steps below when you're ready to run it end-to-end.
+members panel.
+
+> **This project uses hosted Supabase (supabase.com), not local Docker.**
+> The live project is `xfjrdirhzrajwnvcfsge` — its URL + anon key are already in
+> `.env`. All steps below target the hosted project via the dashboard and
+> `supabase db push`.
 
 ## 1. Install (already done once)
 
@@ -11,45 +15,57 @@ steps below when you're ready to run it end-to-end.
 npm install
 ```
 
-## 2. Bring up Supabase
+## 2. Link the hosted project & push migrations
 
-**Local (needs Docker Desktop running):**
+The `.env` is already filled in from the project's **API settings** (Dashboard →
+Project Settings → API):
+
+```
+EXPO_PUBLIC_SUPABASE_URL=https://xfjrdirhzrajwnvcfsge.supabase.co
+EXPO_PUBLIC_SUPABASE_ANON_KEY=<anon key>
+```
+
+Link the CLI to the project and push the schema (needs the DB password from
+Dashboard → Project Settings → Database):
 
 ```bash
-npx supabase start          # boots Postgres + Studio + Auth locally
-npx supabase db reset       # applies migrations 0001 + 0002 + seed.sql
+npx supabase link --project-ref xfjrdirhzrajwnvcfsge
+npx supabase db push        # applies every migration in supabase/migrations/
 ```
 
-`supabase start` prints an **API URL** and **anon key**. Copy `.env.example`
-to `.env` and paste them in:
+`db push` is the only way schema reaches the hosted DB — there is no local
+Docker/`db reset` step in this project. Re-run it after adding any migration.
 
-```
-EXPO_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321
-EXPO_PUBLIC_SUPABASE_ANON_KEY=<anon key from `supabase start`>
-```
+## 3. Turn OFF email confirmation (required — do this before first login)
 
-**Hosted instead:** create the project, then
-`npx supabase link --project-ref <ref>` and `npx supabase db push`. Use the
-project URL + anon key from the dashboard's API settings in `.env`.
+Hosted projects default to **"Confirm email" ON**, and the built-in email sender
+is heavily rate-limited, so confirmation emails often never arrive — which locks
+you out at sign-in with *"Email not confirmed."* This league gates membership
+through admin approval, so email confirmation is redundant:
 
-> Note: on a physical device `127.0.0.1` won't resolve to your laptop — use your
-> machine's LAN IP (e.g. `http://192.168.1.x:54321`) or a hosted project.
+**Dashboard → Authentication → Sign In / Providers → Email → toggle
+"Confirm email" OFF → Save.**
 
-## 3. Run the app
+With it off, sign-up returns a session immediately (no email round-trip) and the
+app routes straight to the pending screen.
+
+> Prefer to keep confirmation on? Then configure a real SMTP provider under
+> Authentication → Emails first, or the rate limit will block sign-ups.
+
+## 4. Run the app
 
 ```bash
 npx expo start
 ```
 
-Open in Expo Go (or a simulator). You'll land on the sign-in screen.
+Open in Expo Go or a simulator — you land on the sign-in screen.
 
-## 4. Create the first admin
+## 5. Create the first admin
 
-Auth users are created by signing up in the app, so:
-
-1. In the app, **sign up** with `imuravchiksoccer@gmail.com`. The
-   `handle_new_user` trigger creates a `profiles` row as `pending`/`player`.
-2. Promote it directly (Supabase Studio SQL editor, or `psql`):
+1. In the app, **sign up** with `imuravchiksoccer@gmail.com`. With confirmation
+   off you get a session immediately; the `handle_new_user` trigger creates a
+   `profiles` row as `pending`/`player`.
+2. Promote it in the **Dashboard → SQL Editor**:
 
 ```sql
 update profiles
@@ -57,15 +73,25 @@ set status = 'active', role = 'admin'
 where id = (select id from auth.users where email = 'imuravchiksoccer@gmail.com');
 ```
 
-3. Relaunch the app — you now land in the `(tabs)` shell with the
-   **Admin · Members** entry on the Profile tab.
+3. Relaunch the app → you land in the `(tabs)` shell with the **Admin · Members**
+   and **Admin · Baselines** entries on the Profile tab.
 
-## 5. Verify the DoD
+## 6. Verify the DoD
 
 - Sign up a second test account → it appears under **Members → pending**.
 - Admit it as `active` → that account relaunches into `(tabs)`.
 - Admit as `viewer` → lands in the read-only `(viewer)` group.
 - Reject → stays in the `(pending)` group with the rejected message.
+
+## Troubleshooting login
+
+| Symptom | Cause | Fix |
+|---|---|---|
+| *"Email not confirmed"* on sign-in | Confirmation on; email never confirmed | Do §3, then delete the unconfirmed user (Auth → Users) and sign up again |
+| *"email rate limit exceeded"* on sign-up | Built-in SMTP rate limit while confirmation is on | Do §3 (disable confirmation) |
+| *"Database error saving new user"* | Migrations not pushed | Do §2 (`db push`) |
+| *"Invalid login credentials"* | Wrong password, or account was never created | Reset password in Auth → Users, or sign up |
+| Board/screens error on `get_leaderboard` | Phase 2 migrations not pushed | `npx supabase db push` (see PHASE2_SETUP.md) |
 
 ## Migrations in this phase
 

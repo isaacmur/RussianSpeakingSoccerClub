@@ -481,7 +481,7 @@ The phase order below follows the outline's section 12 build sequence, but restr
 
 - Create the Supabase project (hosted); record project URL + anon key.
 - Start Apple Developer Program + Google Play Console enrollment now — approval can take days, and this is currently the outline's single biggest schedule risk if left until distribution (phase 7).
-- Install Supabase CLI + Docker for local dev (`supabase init` / `supabase start`).
+- Install the Supabase CLI and link it to the hosted project (`supabase link --project-ref <ref>`); schema is applied with `supabase db push` (no local Docker).
 - Reserve app bundle identifiers for EAS.
 - Confirm first-admin account: `imuravchiksoccer@gmail.com` (granted `role='admin', status='active'` directly via SQL after phase 1's `profiles` table exists).
 
@@ -493,7 +493,7 @@ Scaffold the app, stand up the **entire** schema (not just `profiles`), and get 
 
 **Order of work:**
 1. `npx create-expo-app`, TypeScript, Expo Router, NativeWind config.
-2. `supabase init`, `supabase start` (local Postgres).
+2. `supabase init`, then `supabase link --project-ref <ref>` to the hosted project (schema applied via `supabase db push`; no local Postgres/Docker).
 3. `supabase/migrations/0001_schema.sql` — create **all** tables from the outline's schema section in one migration: `profiles`, `notification_prefs`, `seasons`, `season_baselines`, `game_series`, `games`, `registrations`, `match_results`, `goals`, `channels`, `messages`, `notifications`. Creating `match_results`/`goals` here (rather than deferring to phase 5) is required so the `player_stats` view in phase 2 compiles.
 4. `supabase/migrations/0002_functions_rls.sql` — `is_active_member()`, `is_admin()`, `can_view_reports()`, then `enable row level security` on **all** tables. Write real policies for `profiles` now; for tables whose UI ships later, enabling RLS with no policy yet is safe (default-deny) and avoids retrofitting RLS onto live tables later.
 5. `lib/supabase.ts` client; `(auth)/` sign-in + sign-up screens (email/password).
@@ -572,7 +572,7 @@ Scaffold the app, stand up the **entire** schema (not just `profiles`), and get 
 ## Cross-Cutting Notes
 
 - **Commit/PR granularity:** one PR per phase (0 excluded, since it's non-code) — each bundles its migrations, RLS, screens, and any Edge Function so the phase's DoD is reviewable as a unit.
-- **Local vs. hosted Supabase:** iterate migrations against `supabase start` (local Docker) with `supabase db reset`; push to the hosted project with `supabase db push` once a phase's migrations stabilize. `pg_cron` and Database Webhooks need explicit hosted-project checkpoints in phases 3–4 since they aren't fully testable locally.
+- **Supabase environment (hosted-only):** this project targets **hosted Supabase** (supabase.com, project `xfjrdirhzrajwnvcfsge`) — there is no local Docker workflow. Apply schema with `npx supabase db push` against the linked project after adding each migration; inspect data and simulate RLS in the Dashboard SQL Editor. Auth requires **email confirmation disabled** (Authentication → Sign In / Providers → Email), since the built-in SMTP is rate-limited and membership is gated by admin approval anyway — see PHASE1_SETUP.md. `pg_cron` and Database Webhooks (phases 3–4) are configured directly on the hosted project.
 - **Key ordering fixes vs. the raw outline** (call these out explicitly when implementing, since the outline's own section numbering doesn't sequence them this way):
   - `match_results` / `goals` tables created in phase 1's schema migration, not phase 5, so `player_stats` (phase 2) compiles.
   - `is_active_member` / `is_admin` / `can_view_reports` created before any RLS policy references them (start of phase 1).
@@ -587,4 +587,4 @@ Scaffold the app, stand up the **entire** schema (not just `profiles`), and get 
 
 ## Verification
 
-Each phase's DoD above doubles as its acceptance test — run it manually via Expo Go/simulator or an EAS dev-client build against the local (phases 1–2) or hosted (phases 3+) Supabase project, using Supabase Studio and the SQL editor to inspect table state and simulate RLS as different roles. There is no existing automated test harness in this repo; introducing one (e.g. Detox/Maestro for the mobile flows, pgTAP for RLS) is out of scope for this plan but worth revisiting once phase 1 lands.
+Each phase's DoD above doubles as its acceptance test — run it manually via Expo Go/simulator or an EAS dev-client build against the hosted Supabase project, using the Dashboard's Table Editor and SQL Editor to inspect table state and simulate RLS as different roles. There is no existing automated test harness in this repo; introducing one (e.g. Detox/Maestro for the mobile flows, pgTAP for RLS) is out of scope for this plan but worth revisiting once phase 1 lands.
