@@ -3,6 +3,7 @@
 
 import * as Haptics from "expo-haptics";
 import {
+  Platform,
   Pressable,
   PressableProps,
   Text,
@@ -17,6 +18,15 @@ import { BulbString, ChainLink, Neon, ParachuteJump } from "@/components/motif";
 import { cardShadow, glow, palette, tabularNums, Tone, toneText } from "@/lib/theme";
 
 export { BulbString, ChainLink, Neon, ParachuteJump };
+
+// expo-haptics has no web implementation — calling it in a browser throws.
+const canBuzz = Platform.OS !== "web";
+const buzzTap = () => {
+  if (canBuzz) void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+};
+const buzzSelect = () => {
+  if (canBuzz) void Haptics.selectionAsync();
+};
 
 // ── Screen ────────────────────────────────────────────────────────────────
 // Night ground. `fence` lays Kaiser Park's chain-link behind the content —
@@ -161,7 +171,7 @@ export function Button({
     <Pressable
       disabled={off}
       onPress={(e) => {
-        void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        buzzTap();
         onPress?.(e);
       }}
       className={`h-12 items-center justify-center rounded-xl border px-4 ${face} ${
@@ -307,7 +317,7 @@ export function ActionChip({
     <Pressable
       disabled={disabled}
       onPress={() => {
-        void Haptics.selectionAsync();
+        buzzSelect();
         onPress();
       }}
       className={`rounded-lg px-3 py-2 ${face} ${disabled ? "opacity-40" : ""}`}

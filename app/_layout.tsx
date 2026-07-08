@@ -72,7 +72,9 @@ function RouteGuard() {
       allowed.add("game");
       if (profile.role === "admin") allowed.add("admin");
     }
-    if (group && !allowed.has(group)) {
+    // No group means the bare index route — its spinner is only a hand-off,
+    // so it must redirect too or a signed-in user is stranded on it.
+    if (!group || !allowed.has(group)) {
       router.replace(`/${target}` as never);
     }
   }, [loading, session, profile, segments, router]);
