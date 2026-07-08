@@ -1,24 +1,20 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "expo-router";
+import { Alert, FlatList, Pressable, Text, View } from "react-native";
+import { MarqueeSpinner } from "@/components/motif";
 import {
-  ActivityIndicator,
-  Alert,
-  FlatList,
-  Pressable,
-  Text,
-  View,
-} from "react-native";
-import { Button, Screen, Subtle } from "@/components/ui";
+  ActionChip,
+  Button,
+  Card,
+  EmptyState,
+  Heading,
+  Num,
+  Screen,
+  StatusChip,
+} from "@/components/ui";
 import { formatKickoff, statusLabel } from "@/lib/format";
 import { supabase } from "@/lib/supabase";
 import { Game, GameStatus } from "@/lib/types";
-
-const TONE_TEXT: Record<"pitch" | "boot" | "mute" | "ink", string> = {
-  pitch: "text-pitch",
-  boot: "text-boot",
-  mute: "text-mute",
-  ink: "text-ink",
-};
 
 export default function AdminSchedule() {
   const qc = useQueryClient();
@@ -64,8 +60,14 @@ export default function AdminSchedule() {
       Alert.alert("Update failed", e instanceof Error ? e.message : String(e)),
   });
 
+  const count = data?.length ?? 0;
+
   return (
     <Screen>
+      <View className="pt-1">
+        <Heading kicker={count > 0 ? `${count} upcoming` : "Admin"}>Schedule</Heading>
+      </View>
+
       <View className="py-3">
         <Button
           title="Generate games from series"
@@ -77,7 +79,7 @@ export default function AdminSchedule() {
 
       {isLoading ? (
         <View className="flex-1 items-center justify-center">
-          <ActivityIndicator color="#1F7A46" />
+          <MarqueeSpinner />
         </View>
       ) : (
         <FlatList
@@ -88,9 +90,7 @@ export default function AdminSchedule() {
           ItemSeparatorComponent={() => <View className="h-3" />}
           contentContainerClassName="pb-8"
           ListEmptyComponent={
-            <View className="items-center py-16">
-              <Subtle>No upcoming games. Create a series first.</Subtle>
-            </View>
+            <EmptyState>No upcoming games. Create a series first.</EmptyState>
           }
           renderItem={({ item }) => (
             <GameAdminRow
@@ -116,58 +116,42 @@ function GameAdminRow({
 }) {
   const status = statusLabel(game.status);
   const done = game.status === "completed" || game.status === "cancelled";
+
   return (
-    <View className="gap-3 rounded-xl border border-line bg-card p-4">
+    <Card className="gap-3 p-4">
       <Link href={{ pathname: "/game/[id]", params: { id: game.id } }} asChild>
-        <Pressable>
-          <Text className="font-display text-base uppercase text-ink">
+        <Pressable className="gap-1">
+          <Text className="font-display text-base uppercase text-bone">
             {game.title}
           </Text>
-          <Subtle>{formatKickoff(game.kickoff_at)}</Subtle>
-          <Text
-            className={`font-display text-xs uppercase ${TONE_TEXT[status.tone]}`}
-          >
-            {status.label}
-          </Text>
+          <Num className="font-body text-sm text-steel">
+            {formatKickoff(game.kickoff_at)}
+          </Num>
+          <StatusChip label={status.label} tone={status.tone} />
         </Pressable>
       </Link>
 
       {!done ? (
         <View className="flex-row flex-wrap gap-2">
           {game.status === "scheduled" ? (
-            <Chip label="Open reg" tone="pitch" disabled={busy} onPress={() => onSetStatus("registration_open")} />
+            <ActionChip
+              label="Open reg"
+              tone="go"
+              disabled={busy}
+              onPress={() => onSetStatus("registration_open")}
+            />
           ) : null}
           {game.status === "registration_open" || game.status === "filled" ? (
-            <Chip label="Lock" tone="ink" disabled={busy} onPress={() => onSetStatus("locked")} />
+            <ActionChip label="Lock" disabled={busy} onPress={() => onSetStatus("locked")} />
           ) : null}
-          <Chip label="Cancel" tone="boot" disabled={busy} onPress={() => onSetStatus("cancelled")} />
+          <ActionChip
+            label="Cancel"
+            tone="danger"
+            disabled={busy}
+            onPress={() => onSetStatus("cancelled")}
+          />
         </View>
       ) : null}
-    </View>
-  );
-}
-
-function Chip({
-  label,
-  tone,
-  disabled,
-  onPress,
-}: {
-  label: string;
-  tone: "pitch" | "boot" | "ink";
-  disabled: boolean;
-  onPress: () => void;
-}) {
-  const bg = tone === "pitch" ? "bg-pitch" : tone === "boot" ? "bg-boot" : "bg-ink";
-  return (
-    <Pressable
-      disabled={disabled}
-      onPress={onPress}
-      className={`rounded-lg px-3 py-2 ${bg} ${disabled ? "opacity-50" : ""}`}
-    >
-      <Text className="text-sm font-semibold uppercase tracking-wide text-white">
-        {label}
-      </Text>
-    </Pressable>
+    </Card>
   );
 }

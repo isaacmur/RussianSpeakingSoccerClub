@@ -5,7 +5,8 @@
     "version": "0.1.0",
     "scheme": "weekendleague",
     "orientation": "portrait",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "dark",
+    "backgroundColor": "#060B13",
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
@@ -14,7 +15,7 @@
     "android": {
       "package": "com.weekendleague.app",
       "adaptiveIcon": {
-        "backgroundColor": "#111A2E"
+        "backgroundColor": "#060B13"
       }
     },
     "web": {
@@ -25,7 +26,14 @@
       "expo-router",
       "expo-secure-store",
       "expo-asset",
-      "expo-font"
+      "expo-font",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#060B13",
+          "resizeMode": "contain"
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true

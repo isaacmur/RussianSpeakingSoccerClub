@@ -1,8 +1,10 @@
 import { Link } from "expo-router";
 import { useState } from "react";
 import { Alert, View } from "react-native";
+import { ParachuteJump } from "@/components/motif";
 import { Button, Field, Heading, Screen, Subtle } from "@/components/ui";
 import { supabase } from "@/lib/supabase";
+import { palette } from "@/lib/theme";
 
 export default function SignUp() {
   const [displayName, setDisplayName] = useState("");
@@ -41,11 +43,12 @@ export default function SignUp() {
 
   return (
     <Screen>
-      <View className="flex-1 justify-center gap-6">
-        <View className="gap-1">
-          <Heading>Join the league</Heading>
-          <Subtle>Create an account — an admin will admit you</Subtle>
+      <View className="flex-1 justify-center gap-7">
+        <View className="items-center">
+          <ParachuteJump height={110} color={palette.line} />
         </View>
+
+        <Heading kicker="Admission by approval">Join the club</Heading>
 
         <View className="gap-4">
           <Field
@@ -77,7 +80,7 @@ export default function SignUp() {
 
         <View className="flex-row justify-center gap-1">
           <Subtle>Already have an account?</Subtle>
-          <Link href="/(auth)/sign-in" className="text-base font-semibold text-pitch">
+          <Link href="/(auth)/sign-in" className="font-body-semi text-base text-wonder">
             Sign in
           </Link>
         </View>

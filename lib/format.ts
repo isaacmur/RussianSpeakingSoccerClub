@@ -1,3 +1,4 @@
+import type { Tone } from "./theme";
 import { GameStatus } from "./types";
 
 export const DAY_NAMES = [
@@ -31,27 +32,29 @@ export function formatKickoff(iso: string): string {
   return `${date} · ${time} ET`;
 }
 
-// Short human label + accent tone for a game status, matching the palette.
-export function statusLabel(status: GameStatus): {
-  label: string;
-  tone: "pitch" | "boot" | "mute" | "ink";
-} {
+// Short human label + semantic tone for a game status.
+//
+// Tones are deliberately *not* color names. This used to return
+// "pitch" | "boot" | "mute" | "ink", which baked the palette into business
+// logic — renaming a color meant editing this file. <StatusChip> owns the
+// tone → token mapping now, so the next redesign stops at the component layer.
+export function statusLabel(status: GameStatus): { label: string; tone: Tone } {
   switch (status) {
     case "registration_open":
-      return { label: "Registration open", tone: "pitch" };
+      return { label: "Registration open", tone: "positive" };
     case "filled":
-      return { label: "Full", tone: "boot" };
+      return { label: "Full", tone: "urgent" };
     case "scheduled":
-      return { label: "Scheduled", tone: "mute" };
+      return { label: "Scheduled", tone: "quiet" };
     case "locked":
-      return { label: "Locked", tone: "ink" };
+      return { label: "Locked", tone: "strong" };
     case "in_progress":
-      return { label: "In progress", tone: "ink" };
+      return { label: "In progress", tone: "strong" };
     case "completed":
-      return { label: "Completed", tone: "mute" };
+      return { label: "Completed", tone: "quiet" };
     case "cancelled":
-      return { label: "Cancelled", tone: "boot" };
+      return { label: "Cancelled", tone: "urgent" };
     default:
-      return { label: status, tone: "mute" };
+      return { label: status, tone: "quiet" };
   }
 }

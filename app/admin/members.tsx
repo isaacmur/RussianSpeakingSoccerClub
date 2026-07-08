@@ -1,30 +1,32 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
+import { Alert, FlatList, Text, View } from "react-native";
+import { MarqueeSpinner } from "@/components/motif";
 import {
-  ActivityIndicator,
-  Alert,
-  FlatList,
-  Pressable,
-  Text,
-  View,
-} from "react-native";
-import { Screen, Subtle } from "@/components/ui";
+  ActionChip,
+  Card,
+  EmptyState,
+  FilterPill,
+  Heading,
+  Screen,
+} from "@/components/ui";
 import { supabase } from "@/lib/supabase";
 import { Profile, ProfileRole, ProfileStatus } from "@/lib/types";
 
 const FILTERS = ["pending", "active", "viewer", "rejected"] as const;
 type Filter = (typeof FILTERS)[number];
 
-function statusColor(status: ProfileStatus): string {
+// Membership state, not game state — so this doesn't route through statusLabel().
+function statusText(status: ProfileStatus): string {
   switch (status) {
     case "active":
-      return "text-pitch";
+      return "text-wonder";
     case "viewer":
-      return "text-ink";
+      return "text-bone";
     case "rejected":
-      return "text-boot";
+      return "text-cyclone-lit";
     default:
-      return "text-mute";
+      return "text-luna"; // pending — lamplight, waiting to be let in
   }
 }
 
@@ -66,37 +68,28 @@ export default function AdminMembers() {
       Alert.alert("Update failed", e instanceof Error ? e.message : String(e)),
   });
 
+  const count = data?.length ?? 0;
+
   return (
     <Screen>
-      {/* Status filter */}
+      <View className="pt-1">
+        <Heading kicker={count > 0 ? `${count} ${filter}` : "Admin"}>Members</Heading>
+      </View>
+
       <View className="flex-row gap-2 py-3">
-        {FILTERS.map((f) => {
-          const active = f === filter;
-          return (
-            <Pressable
-              key={f}
-              onPress={() => setFilter(f)}
-              className={[
-                "rounded-full border px-3 py-1",
-                active ? "border-ink bg-ink" : "border-line bg-card",
-              ].join(" ")}
-            >
-              <Text
-                className={[
-                  "text-sm uppercase tracking-wide",
-                  active ? "text-white" : "text-mute",
-                ].join(" ")}
-              >
-                {f}
-              </Text>
-            </Pressable>
-          );
-        })}
+        {FILTERS.map((f) => (
+          <FilterPill
+            key={f}
+            label={f}
+            active={f === filter}
+            onPress={() => setFilter(f)}
+          />
+        ))}
       </View>
 
       {isLoading ? (
         <View className="flex-1 items-center justify-center">
-          <ActivityIndicator color="#1F7A46" />
+          <MarqueeSpinner />
         </View>
       ) : (
         <FlatList
@@ -106,11 +99,7 @@ export default function AdminMembers() {
           refreshing={isRefetching}
           ItemSeparatorComponent={() => <View className="h-3" />}
           contentContainerClassName="py-2"
-          ListEmptyComponent={
-            <View className="items-center py-16">
-              <Subtle>No {filter} members.</Subtle>
-            </View>
-          }
+          ListEmptyComponent={<EmptyState>No {filter} members.</EmptyState>}
           renderItem={({ item }) => (
             <MemberRow
               profile={item}
@@ -135,24 +124,26 @@ function MemberRow({
 }) {
   const isAdmin = profile.role === "admin";
   return (
-    <View className="gap-3 rounded-xl border border-line bg-card p-4">
-      <View className="flex-row items-center justify-between">
-        <View>
-          <Text className="font-display text-lg uppercase text-ink">
-            {profile.display_name}
-          </Text>
-          <Text className={`text-sm uppercase ${statusColor(profile.status)}`}>
-            {profile.status}
-            {isAdmin ? " · admin" : ""}
-          </Text>
-        </View>
+    <Card className="gap-3 p-4">
+      <View>
+        <Text className="font-display text-lg uppercase text-bone">
+          {profile.display_name}
+        </Text>
+        <Text
+          className={`font-display-semi text-[11px] uppercase tracking-wider ${statusText(
+            profile.status
+          )}`}
+        >
+          {profile.status}
+          {isAdmin ? " · admin" : ""}
+        </Text>
       </View>
 
       <View className="flex-row flex-wrap gap-2">
         {profile.status !== "active" && (
           <ActionChip
             label="Admit"
-            tone="pitch"
+            tone="go"
             disabled={busy}
             onPress={() => onAction({ status: "active" })}
           />
@@ -160,7 +151,6 @@ function MemberRow({
         {profile.status !== "viewer" && (
           <ActionChip
             label="Viewer"
-            tone="ink"
             disabled={busy}
             onPress={() => onAction({ status: "viewer" })}
           />
@@ -168,44 +158,17 @@ function MemberRow({
         {profile.status !== "rejected" && (
           <ActionChip
             label="Reject"
-            tone="boot"
+            tone="danger"
             disabled={busy}
             onPress={() => onAction({ status: "rejected" })}
           />
         )}
         <ActionChip
           label={isAdmin ? "Revoke admin" : "Make admin"}
-          tone="ink"
           disabled={busy}
           onPress={() => onAction({ role: isAdmin ? "player" : "admin" })}
         />
       </View>
-    </View>
-  );
-}
-
-function ActionChip({
-  label,
-  tone,
-  disabled,
-  onPress,
-}: {
-  label: string;
-  tone: "pitch" | "boot" | "ink";
-  disabled: boolean;
-  onPress: () => void;
-}) {
-  const bg =
-    tone === "pitch" ? "bg-pitch" : tone === "boot" ? "bg-boot" : "bg-ink";
-  return (
-    <Pressable
-      disabled={disabled}
-      onPress={onPress}
-      className={`rounded-lg px-3 py-2 ${bg} ${disabled ? "opacity-50" : ""}`}
-    >
-      <Text className="text-sm font-semibold uppercase tracking-wide text-white">
-        {label}
-      </Text>
-    </Pressable>
+    </Card>
   );
 }

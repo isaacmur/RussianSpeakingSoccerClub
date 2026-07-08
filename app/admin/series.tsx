@@ -1,14 +1,20 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
+import { Alert, ScrollView, Text, View } from "react-native";
+import { MarqueeSpinner } from "@/components/motif";
 import {
-  ActivityIndicator,
-  Alert,
-  Pressable,
-  ScrollView,
-  Text,
-  View,
-} from "react-native";
-import { Button, Field, Screen, Subtle } from "@/components/ui";
+  ActionChip,
+  BulbString,
+  Button,
+  Card,
+  Field,
+  FilterPill,
+  Heading,
+  Label,
+  Num,
+  Screen,
+  Subtle,
+} from "@/components/ui";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/lib/supabase";
 import { GameSeries } from "@/lib/types";
@@ -84,14 +90,16 @@ export default function AdminSeries() {
       Alert.alert("Update failed", e instanceof Error ? e.message : String(e)),
   });
 
+  const list = data ?? [];
+
   return (
     <Screen>
-      <ScrollView contentContainerClassName="gap-6 py-4">
+      <ScrollView contentContainerClassName="gap-5 py-3" showsVerticalScrollIndicator={false}>
+        <Heading kicker="Recurring fixtures">Series</Heading>
+
         {/* New series form */}
-        <View className="gap-4 rounded-xl border border-line bg-card p-4">
-          <Text className="font-display text-lg uppercase text-ink">
-            New series
-          </Text>
+        <Card className="gap-4 p-4">
+          <Label>New series</Label>
           <Field
             label="Title"
             value={title}
@@ -99,29 +107,12 @@ export default function AdminSeries() {
             placeholder="Saturday Pickup"
           />
 
-          <View className="gap-1">
-            <Text className="text-sm font-medium uppercase tracking-wide text-mute">
-              Day of week
-            </Text>
+          <View className="gap-1.5">
+            <Label>Day of week</Label>
             <View className="flex-row flex-wrap gap-2">
-              {DAYS_SHORT.map((d, i) => {
-                const on = i === dow;
-                return (
-                  <Pressable
-                    key={d}
-                    onPress={() => setDow(i)}
-                    className={`rounded-lg border px-3 py-2 ${
-                      on ? "border-ink bg-ink" : "border-line bg-card"
-                    }`}
-                  >
-                    <Text
-                      className={`text-sm uppercase ${on ? "text-white" : "text-mute"}`}
-                    >
-                      {d}
-                    </Text>
-                  </Pressable>
-                );
-              })}
+              {DAYS_SHORT.map((d, i) => (
+                <FilterPill key={d} label={d} active={i === dow} onPress={() => setDow(i)} />
+              ))}
             </View>
           </View>
 
@@ -149,7 +140,7 @@ export default function AdminSeries() {
             label="Location"
             value={location}
             onChangeText={setLocation}
-            placeholder="Riverside Fields"
+            placeholder="Kaiser Park"
           />
 
           <View className="flex-row gap-3">
@@ -176,40 +167,38 @@ export default function AdminSeries() {
             loading={create.isPending}
             onPress={() => create.mutate()}
           />
-        </View>
+        </Card>
+
+        <BulbString />
 
         {/* Existing series */}
         <View className="gap-3">
-          <Text className="font-display text-lg uppercase text-ink">Series</Text>
+          <Label>All series</Label>
           {isLoading ? (
-            <ActivityIndicator color="#1F7A46" />
-          ) : (data ?? []).length === 0 ? (
+            <View className="items-center py-6">
+              <MarqueeSpinner />
+            </View>
+          ) : list.length === 0 ? (
             <Subtle>No series yet.</Subtle>
           ) : (
-            (data ?? []).map((s: GameSeries) => (
-              <View
-                key={s.id}
-                className="flex-row items-center justify-between rounded-xl border border-line bg-card p-4"
-              >
+            list.map((s: GameSeries) => (
+              <Card key={s.id} className="flex-row items-center justify-between p-4">
                 <View className="flex-1 pr-3">
-                  <Text className="font-display text-base uppercase text-ink">
+                  <Text className="font-display text-base uppercase text-bone">
                     {s.title}
                   </Text>
-                  <Subtle>
+                  <Num className="font-body text-sm text-steel">
                     {DAYS_SHORT[s.day_of_week]} · {s.kickoff_time.slice(0, 5)} ·{" "}
                     {s.capacity} cap
-                  </Subtle>
+                  </Num>
                 </View>
-                <Pressable
-                  onPress={() => toggleActive.mutate(s)}
+                <ActionChip
+                  label={s.active ? "Active" : "Paused"}
+                  tone={s.active ? "go" : "neutral"}
                   disabled={toggleActive.isPending}
-                  className={`rounded-lg px-3 py-2 ${s.active ? "bg-pitch" : "bg-mute"}`}
-                >
-                  <Text className="text-sm font-semibold uppercase text-white">
-                    {s.active ? "Active" : "Paused"}
-                  </Text>
-                </Pressable>
-              </View>
+                  onPress={() => toggleActive.mutate(s)}
+                />
+              </Card>
             ))
           )}
         </View>

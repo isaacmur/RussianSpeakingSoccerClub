@@ -1,21 +1,25 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Stack, useLocalSearchParams } from "expo-router";
 import { useEffect } from "react";
-import { ActivityIndicator, Alert, ScrollView, Text, View } from "react-native";
-import { Button, Screen, Subtle } from "@/components/ui";
+import { Alert, ScrollView, Text, View } from "react-native";
+import { MarqueeSpinner, WonderWheel } from "@/components/motif";
+import {
+  Badge,
+  BulbString,
+  Button,
+  Card,
+  Heading,
+  Label,
+  Num,
+  Screen,
+  StatusChip,
+  Subtle,
+} from "@/components/ui";
 import { useAuth } from "@/lib/auth";
 import { formatKickoff, statusLabel } from "@/lib/format";
 import { supabase } from "@/lib/supabase";
+import { palette } from "@/lib/theme";
 import { Game, RegistrationWithName } from "@/lib/types";
-
-// Literal classes so NativeWind's compiler keeps them (dynamic `text-${tone}`
-// would be purged).
-const TONE_TEXT: Record<"pitch" | "boot" | "mute" | "ink", string> = {
-  pitch: "text-pitch",
-  boot: "text-boot",
-  mute: "text-mute",
-  ink: "text-ink",
-};
 
 export default function GameDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -106,7 +110,7 @@ export default function GameDetail() {
       <Screen>
         <Stack.Screen options={{ title: "Game" }} />
         <View className="flex-1 items-center justify-center">
-          <ActivityIndicator color="#1F7A46" />
+          <MarqueeSpinner />
         </View>
       </Screen>
     );
@@ -140,64 +144,86 @@ export default function GameDetail() {
       ? waitlist.findIndex((r) => r.id === mine.id) + 1
       : 0;
 
+  const short = spotsLeft > 0 && registered.length < game.min_players;
+
   return (
     <Screen>
       <Stack.Screen options={{ title: game.title }} />
-      <ScrollView contentContainerClassName="gap-5 py-4">
-        {/* Header */}
-        <View className="gap-1">
-          <Text className="font-display text-3xl uppercase text-ink">
-            {game.title}
-          </Text>
-          <Subtle>{formatKickoff(game.kickoff_at)}</Subtle>
-          {game.location ? <Subtle>{game.location}</Subtle> : null}
-          <Text
-            className={`font-display text-sm uppercase ${TONE_TEXT[status.tone]}`}
-          >
-            {status.label}
-          </Text>
+      <ScrollView contentContainerClassName="gap-5 py-4" showsVerticalScrollIndicator={false}>
+        {/* Header — the kicker promotes the kickoff time out of body copy. */}
+        <View className="gap-2">
+          <Heading kicker={formatKickoff(game.kickoff_at)}>{game.title}</Heading>
+          <View className="flex-row items-center gap-3">
+            <StatusChip label={status.label} tone={status.tone} />
+            {game.location ? <Subtle>· {game.location}</Subtle> : null}
+          </View>
         </View>
 
-        {/* Capacity meter */}
-        <View className="gap-2 rounded-xl border border-line bg-card p-4">
-          <View className="flex-row items-center justify-between">
-            <Text className="font-display text-lg uppercase text-ink">
-              {registered.length}/{game.capacity} in
-            </Text>
-            <Text
-              className={`font-display text-sm uppercase ${
-                spotsLeft > 0 ? "text-pitch" : "text-boot"
-              }`}
-            >
-              {spotsLeft > 0 ? `${spotsLeft} spots left` : "Full"}
-            </Text>
+        {/* The Wonder Wheel: one cabin per roster spot. Capacity read as a shape.
+            Only element on the screen that earns a glow. */}
+        <Card className="items-center gap-3 py-6" glowColor={spotsLeft > 0 ? palette.wonder : palette.cyclone}>
+          <WonderWheel
+            filled={registered.length}
+            capacity={game.capacity}
+            waitlist={waitlist.length}
+          />
+
+          <View className="items-center gap-1">
+            <View className="flex-row items-baseline gap-1">
+              <Num className="font-display text-4xl text-bone">{registered.length}</Num>
+              <Text className="font-display text-xl text-steel">/</Text>
+              <Num className="font-display text-xl text-steel">{game.capacity}</Num>
+            </View>
+            {spotsLeft > 0 ? (
+              <Text
+                className={`font-display-semi text-xs uppercase tracking-wider ${
+                  short ? "text-luna" : "text-wonder"
+                }`}
+              >
+                {spotsLeft} {spotsLeft === 1 ? "spot" : "spots"} left
+              </Text>
+            ) : (
+              <Badge color={palette.cyclone} lit>
+                Full
+              </Badge>
+            )}
           </View>
-          <CapacityBar filled={registered.length} capacity={game.capacity} />
-          {registered.length < game.min_players ? (
-            <Subtle>
+
+          {short ? (
+            <Text className="px-6 text-center font-body text-sm text-steel">
               Needs {game.min_players - registered.length} more to hit the{" "}
               {game.min_players} minimum.
-            </Subtle>
+            </Text>
           ) : null}
-        </View>
+
+          {waitlist.length > 0 ? (
+            <View className="flex-row items-center gap-1.5">
+              <View className="h-1.5 w-1.5 rounded-full bg-ferris" />
+              <Text className="font-display-semi text-[11px] uppercase tracking-wider text-ferris">
+                {waitlist.length} waiting
+              </Text>
+            </View>
+          ) : null}
+        </Card>
 
         {/* Your registration + action */}
-        <View className="gap-2">
+        <View className="gap-3">
           {mine?.status === "registered" ? (
-            <Text className="font-display text-base uppercase text-pitch">
-              You&apos;re in ✓
-            </Text>
+            <View className="flex-row items-center gap-2">
+              <Badge color={palette.wonder}>You&apos;re in</Badge>
+            </View>
           ) : mine?.status === "waitlist" ? (
-            <Text className="font-display text-base uppercase text-boot">
-              On the waitlist · #{myWaitlistPos}
-            </Text>
+            <View className="flex-row items-center gap-2">
+              <Badge color={palette.ferris}>Waitlist</Badge>
+              <Num className="font-display-semi text-sm text-ferris">#{myWaitlistPos}</Num>
+            </View>
           ) : null}
 
           {canModify ? (
             mine && mine.status !== "withdrawn" ? (
               <Button
                 title={mine.status === "waitlist" ? "Leave waitlist" : "Withdraw"}
-                variant="ghost"
+                variant="danger"
                 loading={mutate.isPending}
                 onPress={() => mutate.mutate("leave")}
               />
@@ -209,36 +235,34 @@ export default function GameDetail() {
               />
             )
           ) : (
-            <View className="rounded-xl border border-line bg-card p-3">
+            <Card className="p-3">
               <Subtle>
                 {beforeKickoff
                   ? "Registration isn't open for this game."
                   : "This game has kicked off — the list is locked."}
               </Subtle>
-            </View>
+            </Card>
           )}
         </View>
 
-        {/* Signup list */}
-        <SignupList title={`Registered (${registered.length})`} rows={registered} youId={profile?.id} />
+        <BulbString />
+
+        {/* Team sheet */}
+        <SignupList
+          title={`Registered (${registered.length})`}
+          rows={registered}
+          youId={profile?.id}
+        />
         {waitlist.length > 0 ? (
-          <SignupList title={`Waitlist (${waitlist.length})`} rows={waitlist} youId={profile?.id} />
+          <SignupList
+            title={`Waitlist (${waitlist.length})`}
+            rows={waitlist}
+            youId={profile?.id}
+            spark
+          />
         ) : null}
       </ScrollView>
     </Screen>
-  );
-}
-
-function CapacityBar({ filled, capacity }: { filled: number; capacity: number }) {
-  const pct = capacity > 0 ? Math.min(100, (filled / capacity) * 100) : 0;
-  const full = filled >= capacity;
-  return (
-    <View className="h-2 overflow-hidden rounded-full bg-line">
-      <View
-        className={`h-full ${full ? "bg-boot" : "bg-pitch"}`}
-        style={{ width: `${pct}%` }}
-      />
-    </View>
   );
 }
 
@@ -246,41 +270,49 @@ function SignupList({
   title,
   rows,
   youId,
+  spark = false,
 }: {
   title: string;
   rows: RegistrationWithName[];
   youId?: string;
+  spark?: boolean;
 }) {
   return (
     <View className="gap-2">
-      <Text className="font-display text-sm uppercase tracking-wide text-mute">
-        {title}
-      </Text>
-      <View className="rounded-xl border border-line bg-card">
+      <Label>{title}</Label>
+      <Card>
         {rows.length === 0 ? (
           <View className="p-4">
             <Subtle>No one yet.</Subtle>
           </View>
         ) : (
-          rows.map((r, i) => (
-            <View
-              key={r.id}
-              className={`flex-row items-center justify-between px-4 py-3 ${
-                i > 0 ? "border-t border-line" : ""
-              }`}
-            >
-              <Text className="text-base text-ink">
-                {r.profiles?.display_name ?? "Player"}
-              </Text>
-              {r.user_id === youId ? (
-                <Text className="font-display text-xs uppercase text-pitch">
-                  You
-                </Text>
-              ) : null}
-            </View>
-          ))
+          rows.map((r, i) => {
+            const you = r.user_id === youId;
+            return (
+              <View
+                key={r.id}
+                className={`flex-row items-center justify-between px-4 py-3 ${
+                  i > 0 ? "border-t border-line/50" : ""
+                }`}
+              >
+                <View className="flex-row items-center gap-3">
+                  {/* squad number = position in the list. Inter, not Oswald:
+                      this is a column, and Oswald ships no tnum feature. */}
+                  <Num className="w-5 font-body-semi text-xs text-steel">{i + 1}</Num>
+                  <Text
+                    className={`font-body text-base ${you ? "text-wonder" : "text-bone"}`}
+                  >
+                    {r.profiles?.display_name ?? "Player"}
+                  </Text>
+                </View>
+                {you ? (
+                  <Badge color={spark ? palette.ferris : palette.wonder}>You</Badge>
+                ) : null}
+              </View>
+            );
+          })
         )}
-      </View>
+      </Card>
     </View>
   );
 }

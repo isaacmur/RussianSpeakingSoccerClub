@@ -1,18 +1,34 @@
 import { useQuery } from "@tanstack/react-query";
 import { useFocusEffect } from "expo-router";
 import { useCallback, useMemo, useState } from "react";
-import { ActivityIndicator, FlatList, Pressable, Text, View } from "react-native";
-import { Subtle } from "@/components/ui";
+import { FlatList, Pressable, Text, View } from "react-native";
+import { MarqueeSpinner } from "@/components/motif";
+import { EmptyState, Label, MarqueeRank, Num, Subtle } from "@/components/ui";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/lib/supabase";
 import { LeaderboardRow } from "@/lib/types";
 
 type Board = "table" | "boot";
 
+const SEASON = "2026 Season";
+
 async function fetchLeaderboard(): Promise<LeaderboardRow[]> {
   const { data, error } = await supabase.rpc("get_leaderboard");
   if (error) throw error;
   return (data ?? []) as LeaderboardRow[];
+}
+
+/**
+ * Kicker for the Table screens, e.g. "2026 Season · 47 players".
+ *
+ * Shares the ["leaderboard"] cache entry with <Leaderboard> rather than issuing
+ * a second RPC — all three read tiers mount both. Degrades to the bare season
+ * before the first fetch resolves, so the heading never reflows.
+ */
+export function useSeasonKicker(): string {
+  const { data } = useQuery({ queryKey: ["leaderboard"], queryFn: fetchLeaderboard });
+  const n = data?.length ?? 0;
+  return n > 0 ? `${SEASON} · ${n} ${n === 1 ? "player" : "players"}` : SEASON;
 }
 
 // The signature element: the season standings rendered as a real league table.
@@ -47,7 +63,7 @@ export function Leaderboard() {
   if (isLoading) {
     return (
       <View className="flex-1 items-center justify-center">
-        <ActivityIndicator color="#1F7A46" />
+        <MarqueeSpinner />
       </View>
     );
   }
@@ -56,7 +72,7 @@ export function Leaderboard() {
     return (
       <View className="flex-1 items-center justify-center gap-2 px-6">
         <Subtle>Couldn&apos;t load the standings.</Subtle>
-        <Text className="text-center text-sm text-mute">
+        <Text className="text-center font-body text-sm text-steel">
           {error instanceof Error ? error.message : String(error)}
         </Text>
       </View>
@@ -72,12 +88,7 @@ export function Leaderboard() {
         keyExtractor={(r) => r.user_id}
         onRefresh={refetch}
         refreshing={isRefetching}
-        ItemSeparatorComponent={() => <View className="h-px bg-line" />}
-        ListEmptyComponent={
-          <View className="items-center py-16">
-            <Subtle>No standings yet this season.</Subtle>
-          </View>
-        }
+        ListEmptyComponent={<EmptyState>No standings yet this season.</EmptyState>}
         renderItem={({ item, index }) => (
           <Row
             row={item}
@@ -112,13 +123,13 @@ function BoardTabs({
             onPress={() => onChange(t.key)}
             className={[
               "rounded-full border px-4 py-1.5",
-              active ? "border-ink bg-ink" : "border-line bg-card",
+              active ? "border-bone bg-bone" : "border-line bg-plank",
             ].join(" ")}
           >
             <Text
               className={[
-                "font-display text-sm uppercase tracking-wide",
-                active ? "text-white" : "text-mute",
+                "font-display-semi text-xs uppercase tracking-wider",
+                active ? "text-night" : "text-steel",
               ].join(" ")}
             >
               {t.label}
@@ -130,21 +141,44 @@ function BoardTabs({
   );
 }
 
-// Column layout shared by header + rows. Tabular numerals keep stats aligned.
+// Column layout shared by header + rows.
+//
+// Every digit below is <Num> (applies fontVariant: tabular-nums, since the
+// `tabular-nums` Tailwind class compiles to font-variant-numeric which
+// css-interop drops) AND is set in Inter, never Oswald.
+//
+// Oswald has no `tnum` OpenType feature at all — measured against its hmtx
+// table, its digits span 385–550 units per em (16.5% spread; "1" is a third
+// narrower than "0"). fontVariant cannot fix a feature the font doesn't ship,
+// so an Oswald column jitters no matter what. Inter's digits are proportional
+// by default too, but it *has* tnum, so <Num> makes them uniform.
+//
+// Rule: Oswald for standalone numerals (hero counts, rank badges — centered in
+// their own box, so width never matters). Inter for anything in a column.
 function TableHeader({ board }: { board: Board }) {
   return (
     <View className="flex-row items-center border-b border-line px-2 pb-2">
-      <Text className="w-8 text-center text-xs uppercase text-mute">#</Text>
-      <Text className="flex-1 pl-2 text-xs uppercase text-mute">Player</Text>
+      <View className="w-8 items-center">
+        <Label>#</Label>
+      </View>
+      <View className="flex-1 pl-3">
+        <Label>Player</Label>
+      </View>
       {board === "boot" ? (
-        <Text className="w-12 text-right text-xs uppercase text-mute">Gls</Text>
+        <View className="w-12 items-end">
+          <Label>Gls</Label>
+        </View>
       ) : (
         <>
-          <Text className="w-8 text-center text-xs uppercase text-mute">P</Text>
-          <Text className="w-16 text-center text-xs uppercase text-mute">
-            W-D-L
-          </Text>
-          <Text className="w-12 text-right text-xs uppercase text-mute">+/-</Text>
+          <View className="w-8 items-center">
+            <Label>P</Label>
+          </View>
+          <View className="w-16 items-center">
+            <Label>W-D-L</Label>
+          </View>
+          <View className="w-12 items-end">
+            <Label>+/-</Label>
+          </View>
         </>
       )}
     </View>
@@ -162,61 +196,55 @@ function Row({
   board: Board;
   isYou: boolean;
 }) {
+  // Boardwalk plank rhythm — alternating board joints underfoot. Deliberately
+  // at the edge of perception; it should feel like a surface, not a stripe.
+  const plank = rank % 2 === 0 ? "bg-plank/40" : "";
+
   return (
     <View
-      className={[
-        "flex-row items-center px-2 py-3",
-        isYou ? "bg-pitch/10" : "",
-      ].join(" ")}
+      className={`flex-row items-center border-b border-line/40 px-2 py-3 ${plank} ${
+        isYou ? "bg-wonder/10" : ""
+      }`}
     >
-      {/* squad-number rank badge */}
-      <View className="w-8 items-center">
-        <View className="h-7 w-7 items-center justify-center rounded-md bg-ink">
-          <Text className="font-display text-sm text-white tabular-nums">
-            {rank}
-          </Text>
-        </View>
-      </View>
+      <MarqueeRank rank={rank} />
 
-      <View className="flex-1 flex-row items-center pl-2">
+      <View className="flex-1 flex-row items-center pl-3">
         <Text
-          className="font-display text-base uppercase text-ink"
+          className={`font-display text-base uppercase ${isYou ? "text-wonder" : "text-bone"}`}
           numberOfLines={1}
         >
           {row.display_name}
         </Text>
         {isYou && (
-          <Text className="ml-2 font-display text-xs uppercase text-pitch">
+          <Text className="ml-2 font-display-semi text-[10px] uppercase tracking-wider text-wonder">
             You
           </Text>
         )}
       </View>
 
       {board === "boot" ? (
-        <Text className="w-12 text-right font-display text-base text-boot tabular-nums">
-          {row.goals}
-        </Text>
+        <Num className="w-12 text-right font-body-semi text-base text-luna">{row.goals}</Num>
       ) : (
         <>
-          <Text className="w-8 text-center text-base text-ink tabular-nums">
+          <Num className="w-8 text-center font-body text-base text-bone">
             {row.games_played}
-          </Text>
-          <Text className="w-16 text-center text-base text-mute tabular-nums">
+          </Num>
+          <Num className="w-16 text-center font-body text-base text-steel">
             {row.wins}-{row.draws}-{row.losses}
-          </Text>
-          <Text
+          </Num>
+          <Num
             className={[
-              "w-12 text-right font-display text-base tabular-nums",
+              "w-12 text-right font-body-semi text-base",
               row.plus_minus > 0
-                ? "text-pitch"
+                ? "text-wonder"
                 : row.plus_minus < 0
-                  ? "text-boot"
-                  : "text-mute",
+                  ? "text-cyclone-lit"
+                  : "text-steel",
             ].join(" ")}
           >
             {row.plus_minus > 0 ? "+" : ""}
             {row.plus_minus}
-          </Text>
+          </Num>
         </>
       )}
     </View>

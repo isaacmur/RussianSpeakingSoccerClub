@@ -1,14 +1,15 @@
 import { View } from "react-native";
-import { Heading, Screen, Subtle } from "@/components/ui";
+import { EmptyState, Heading, Screen } from "@/components/ui";
 
+// Shell only. Phase 5 wires published match reports.
 export default function ViewerReports() {
   return (
     <Screen>
-      <View className="flex-1 justify-center gap-4">
-        <Heading>Match reports</Heading>
-        <View className="rounded-xl border border-line bg-card p-6">
-          <Subtle>Published match reports load here in Phase 5.</Subtle>
-        </View>
+      <View className="pt-1">
+        <Heading kicker="2026 Season">Match reports</Heading>
+      </View>
+      <View className="flex-1 justify-center">
+        <EmptyState>Published match reports load here in Phase 5.</EmptyState>
       </View>
     </Screen>
   );

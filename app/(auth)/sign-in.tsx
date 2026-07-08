@@ -1,8 +1,10 @@
 import { Link } from "expo-router";
 import { useState } from "react";
 import { Alert, View } from "react-native";
+import { ParachuteJump } from "@/components/motif";
 import { Button, Field, Heading, Screen, Subtle } from "@/components/ui";
 import { supabase } from "@/lib/supabase";
+import { palette } from "@/lib/theme";
 
 export default function SignIn() {
   const [email, setEmail] = useState("");
@@ -23,11 +25,13 @@ export default function SignIn() {
 
   return (
     <Screen>
-      <View className="flex-1 justify-center gap-6">
-        <View className="gap-1">
-          <Heading>Weekend League</Heading>
-          <Subtle>Sign in to your account</Subtle>
+      <View className="flex-1 justify-center gap-7">
+        {/* Coney Island's derelict tower. The one place the club's name appears. */}
+        <View className="items-center">
+          <ParachuteJump height={110} color={palette.line} />
         </View>
+
+        <Heading kicker="Russian Speaking Soccer Club">Welcome back</Heading>
 
         <View className="gap-4">
           <Field
@@ -52,7 +56,7 @@ export default function SignIn() {
 
         <View className="flex-row justify-center gap-1">
           <Subtle>No account?</Subtle>
-          <Link href="/(auth)/sign-up" className="text-base font-semibold text-pitch">
+          <Link href="/(auth)/sign-up" className="font-body-semi text-base text-wonder">
             Create one
           </Link>
         </View>

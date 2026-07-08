@@ -14,21 +14,40 @@ if (!supabaseUrl || !supabaseAnonKey) {
   );
 }
 
+// SecureStore rejects on a keychain/keystore error — an entry written by a
+// previous install, or one the OS can no longer decrypt. supabase-js does not
+// catch that: it escapes `getSession()` and, upstream, wedges the app's initial
+// `loading` flag. A session we cannot read is a session we do not have, so
+// swallow the failure and report "absent" instead of exploding boot.
+async function guard<T>(
+  op: () => Promise<T>,
+  fallback: T,
+  action: string,
+  key: string
+): Promise<T> {
+  try {
+    return await op();
+  } catch (err) {
+    console.warn(`[supabase] SecureStore ${action} failed for "${key}":`, err);
+    return fallback;
+  }
+}
+
 // SecureStore-backed session storage for native. On web SecureStore is
 // unavailable, so fall back to localStorage (dev only).
 const ExpoSecureStoreAdapter = {
   getItem: (key: string) =>
     Platform.OS === "web"
       ? Promise.resolve(globalThis.localStorage?.getItem(key) ?? null)
-      : SecureStore.getItemAsync(key),
+      : guard(() => SecureStore.getItemAsync(key), null, "read", key),
   setItem: (key: string, value: string) =>
     Platform.OS === "web"
       ? Promise.resolve(globalThis.localStorage?.setItem(key, value))
-      : SecureStore.setItemAsync(key, value),
+      : guard(() => SecureStore.setItemAsync(key, value), undefined, "write", key),
   removeItem: (key: string) =>
     Platform.OS === "web"
       ? Promise.resolve(globalThis.localStorage?.removeItem(key))
-      : SecureStore.deleteItemAsync(key),
+      : guard(() => SecureStore.deleteItemAsync(key), undefined, "delete", key),
 };
 
 export const supabase = createClient(supabaseUrl ?? "", supabaseAnonKey ?? "", {

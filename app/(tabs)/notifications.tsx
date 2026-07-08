@@ -1,14 +1,16 @@
 import { View } from "react-native";
-import { Heading, Screen, Subtle } from "@/components/ui";
+import { EmptyState, Heading, Screen } from "@/components/ui";
 
+// Shell only. Phase 4 wires the notification center and the unread badge; the
+// kicker becomes "{n} unread" then, and collapses to nothing at zero.
 export default function Notifications() {
   return (
     <Screen>
-      <View className="flex-1 justify-center gap-4">
+      <View className="pt-1">
         <Heading>Alerts</Heading>
-        <View className="rounded-xl border border-line bg-card p-6">
-          <Subtle>Your notification center loads here in Phase 4.</Subtle>
-        </View>
+      </View>
+      <View className="flex-1 justify-center">
+        <EmptyState>Your notification center loads here in Phase 4.</EmptyState>
       </View>
     </Screen>
   );

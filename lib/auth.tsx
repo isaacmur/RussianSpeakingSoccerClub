@@ -23,17 +23,34 @@ type AuthState = {
 
 const AuthContext = createContext<AuthState | undefined>(undefined);
 
+/** Never rejects — a missing profile and an unreachable server both read as null. */
 async function fetchProfile(userId: string): Promise<Profile | null> {
-  const { data, error } = await supabase
-    .from("profiles")
-    .select("*")
-    .eq("id", userId)
-    .maybeSingle();
-  if (error) {
-    console.warn("[auth] failed to load profile:", error.message);
+  try {
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("id", userId)
+      .maybeSingle();
+    if (error) {
+      console.warn("[auth] failed to load profile:", error.message);
+      return null;
+    }
+    return data as Profile | null;
+  } catch (err) {
+    console.warn("[auth] profile request threw:", err);
     return null;
   }
-  return data as Profile | null;
+}
+
+/** Rejects if `p` hasn't settled within `ms`, so a wedged native module can't hang boot. */
+function withTimeout<T>(p: Promise<T>, ms: number, label: string): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(
+      () => reject(new Error(`${label} timed out after ${ms}ms`)),
+      ms
+    );
+    p.then(resolve, reject).finally(() => clearTimeout(timer));
+  });
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -49,18 +66,38 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   useEffect(() => {
-    // Initial load.
-    supabase.auth.getSession().then(async ({ data }) => {
-      await loadForSession(data.session);
-      setLoading(false);
-    });
+    let cancelled = false;
+
+    // Initial load. `getSession()` reads the persisted session straight out of
+    // SecureStore, and supabase-js lets a storage failure escape as a rejection
+    // (its __loadSession is try/finally, no catch). Since `loading` gates the
+    // whole app behind a spinner, every exit from here — success, throw, or a
+    // native module that never answers — has to clear it. Degrade to
+    // signed-out rather than stranding the user on the splash screen.
+    void (async () => {
+      try {
+        const { data } = await withTimeout(
+          supabase.auth.getSession(),
+          8_000,
+          "supabase.auth.getSession()"
+        );
+        if (!cancelled) await loadForSession(data.session);
+      } catch (err) {
+        console.warn("[auth] could not restore session:", err);
+        if (!cancelled) await loadForSession(null);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
 
     // React to sign-in / sign-out / token refresh.
     const { data: sub } = supabase.auth.onAuthStateChange((_event, next) => {
       // Only reload the profile when the user identity actually changes; a
       // token refresh keeps the same user and shouldn't re-fetch.
       if (next?.user.id !== currentUserId.current) {
-        void loadForSession(next);
+        void loadForSession(next).catch((err) =>
+          console.warn("[auth] failed to apply auth change:", err)
+        );
       } else {
         setSession(next);
       }
@@ -73,6 +110,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
 
     return () => {
+      cancelled = true;
       sub.subscription.unsubscribe();
       appStateSub.remove();
     };

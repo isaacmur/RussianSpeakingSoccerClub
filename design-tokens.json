@@ -1,0 +1,21 @@
+{
+  "_comment": "Boardwalk After Dark. The ONLY place hex values live. Consumed by tailwind.config.js (CommonJS) and lib/theme.ts (TypeScript). Contrast ratios and the cyclone/cyclone-lit split are documented in lib/theme.ts and DESIGN_SYSTEM_PLAN.md §2.",
+  "colors": {
+    "night": "#060B13",
+    "plank": "#161F2F",
+    "line": "#2C3B52",
+    "bone": "#EDF1F6",
+    "steel": "#93A3B6",
+    "wonder": "#16E0C8",
+    "luna": "#FFC94A",
+    "cyclone": "#FF3B47",
+    "cyclone-lit": "#FF5C63",
+    "ferris": "#FF4FA3"
+  },
+  "fontFamily": {
+    "display": ["Oswald_700Bold"],
+    "display-semi": ["Oswald_600SemiBold"],
+    "body": ["Inter_400Regular"],
+    "body-semi": ["Inter_600SemiBold"]
+  }
+}

@@ -1,16 +1,19 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
+import { Alert, FlatList, Pressable, Text, TextInput, View } from "react-native";
+import { MarqueeSpinner } from "@/components/motif";
 import {
-  ActivityIndicator,
-  Alert,
-  FlatList,
-  Pressable,
-  Text,
-  TextInput,
-  View,
-} from "react-native";
-import { Button, Screen, Subtle } from "@/components/ui";
+  Button,
+  Card,
+  EmptyState,
+  Heading,
+  Label,
+  Num,
+  Screen,
+  Subtle,
+} from "@/components/ui";
 import { supabase } from "@/lib/supabase";
+import { palette, tabularNums } from "@/lib/theme";
 import { BaselineStats, Profile, SeasonBaseline } from "@/lib/types";
 
 const STAT_FIELDS: { key: keyof BaselineStats; label: string }[] = [
@@ -87,7 +90,7 @@ export default function AdminBaselines() {
     return (
       <Screen>
         <View className="flex-1 items-center justify-center">
-          <ActivityIndicator color="#1F7A46" />
+          <MarqueeSpinner />
         </View>
       </Screen>
     );
@@ -97,7 +100,7 @@ export default function AdminBaselines() {
     return (
       <Screen>
         <View className="flex-1 items-center justify-center px-6">
-          <Subtle>No current season found. Seed the season row first.</Subtle>
+          <EmptyState>No current season found. Seed the season row first.</EmptyState>
         </View>
       </Screen>
     );
@@ -107,15 +110,16 @@ export default function AdminBaselines() {
 
   return (
     <Screen>
+      <View className="pt-1">
+        <Heading kicker="Pre-app history">Baselines</Heading>
+      </View>
       <FlatList
         data={players}
         keyExtractor={(p) => p.id}
         contentContainerClassName="py-3"
         ItemSeparatorComponent={() => <View className="h-3" />}
         ListEmptyComponent={
-          <View className="items-center py-16">
-            <Subtle>No active members to set baselines for.</Subtle>
-          </View>
+          <EmptyState>No active members to set baselines for.</EmptyState>
         }
         renderItem={({ item }) => (
           <PlayerBaseline
@@ -160,26 +164,29 @@ function PlayerBaseline({
       }
     : ZERO;
 
-  const hasBaseline =
-    !!existing && STAT_FIELDS.some((f) => saved[f.key] !== 0);
+  const hasBaseline = !!existing && STAT_FIELDS.some((f) => saved[f.key] !== 0);
 
   return (
-    <View className="rounded-xl border border-line bg-card">
+    <Card>
       <Pressable
         onPress={onToggle}
         className="flex-row items-center justify-between p-4"
       >
-        <View>
-          <Text className="font-display text-lg uppercase text-ink">
+        <View className="flex-1 pr-3">
+          <Text className="font-display text-lg uppercase text-bone">
             {player.display_name}
           </Text>
-          <Text className="text-sm text-mute">
-            {hasBaseline
-              ? `P${saved.games_played} · ${saved.wins}-${saved.draws}-${saved.losses} · ${saved.plus_minus > 0 ? "+" : ""}${saved.plus_minus} · ${saved.goals} gls`
-              : "No baseline set"}
-          </Text>
+          {hasBaseline ? (
+            <Num className="font-body text-sm text-steel">
+              P{saved.games_played} · {saved.wins}-{saved.draws}-{saved.losses} ·{" "}
+              {saved.plus_minus > 0 ? "+" : ""}
+              {saved.plus_minus} · {saved.goals} gls
+            </Num>
+          ) : (
+            <Subtle>No baseline set</Subtle>
+          )}
         </View>
-        <Text className="font-display text-sm uppercase text-mute">
+        <Text className="font-display-semi text-xs uppercase tracking-wider text-luna">
           {open ? "Close" : "Edit"}
         </Text>
       </Pressable>
@@ -192,7 +199,7 @@ function PlayerBaseline({
           onSave={onSave}
         />
       )}
-    </View>
+    </Card>
   );
 }
 
@@ -223,16 +230,20 @@ function BaselineEditor({
       <View className="flex-row flex-wrap gap-3">
         {STAT_FIELDS.map((f) => (
           <View key={f.key} className="w-[30%] gap-1">
-            <Text className="text-xs uppercase tracking-wide text-mute">
-              {f.label}
-            </Text>
+            <Label>{f.label}</Label>
             <TextInput
               value={draft[f.key]}
               onChangeText={(t) =>
                 setDraft((d) => ({ ...d, [f.key]: t.replace(/[^0-9-]/g, "") }))
               }
               keyboardType="numbers-and-punctuation"
-              className="h-11 rounded-lg border border-line bg-chalk px-3 text-base text-ink tabular-nums"
+              placeholderTextColor={palette.steel}
+              className="h-11 rounded-lg border border-line bg-night px-3 font-body text-base text-bone"
+              // The `tabular-nums` class here was a no-op — Tailwind emits
+              // font-variant-numeric, which css-interop never parses. Six stat
+              // boxes side by side need fixed-width digits or they jitter as
+              // you type. Same reason <Num> exists.
+              style={tabularNums}
             />
           </View>
         ))}
