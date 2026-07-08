@@ -25,6 +25,12 @@ export default function ProfileScreen() {
 
         {isAdmin ? (
           <View className="gap-3">
+            <Link href="/admin/schedule" asChild>
+              <Button title="Admin · Schedule" variant="ghost" />
+            </Link>
+            <Link href="/admin/series" asChild>
+              <Button title="Admin · Series" variant="ghost" />
+            </Link>
             <Link href="/admin/members" asChild>
               <Button title="Admin · Members" variant="ghost" />
             </Link>

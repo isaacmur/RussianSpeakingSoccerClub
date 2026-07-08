@@ -55,8 +55,10 @@ function RouteGuard() {
 
     // Admins may roam the admin stack; otherwise keep everyone in their group.
     const allowed = new Set<string>([target]);
-    if (profile.status === "active" && profile.role === "admin") {
-      allowed.add("admin");
+    if (profile.status === "active") {
+      // Active members can open the shared game-detail stack.
+      allowed.add("game");
+      if (profile.role === "admin") allowed.add("admin");
     }
     if (group && !allowed.has(group)) {
       router.replace(`/${target}` as never);
