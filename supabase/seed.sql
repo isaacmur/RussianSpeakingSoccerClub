@@ -1,8 +1,10 @@
--- seed.sql — applied after migrations on `supabase db reset` (local dev).
+-- seed.sql — reference only. This project runs entirely on hosted Supabase;
+-- any seeding is done in the Dashboard SQL Editor or inside idempotent
+-- migrations, so this file is never executed automatically.
+--
 -- Phase 1 has nothing to seed: profiles are created by sign-up + the
 -- handle_new_user trigger, and the first admin is granted manually
--- (see PHASE1_SETUP.md §4).
+-- (see PHASE1_SETUP.md).
 --
--- Phase 2 seeds the 2026 season inside migration 0003_seasons.sql (idempotent,
--- so it also lands on the hosted project via `supabase db push`).
+-- Phase 2 seeds the 2026 season inside migration 0003_seasons.sql (idempotent).
 -- Phase 6 seeds the league-wide chat channel.

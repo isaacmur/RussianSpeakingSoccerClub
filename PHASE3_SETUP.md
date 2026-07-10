@@ -6,14 +6,15 @@ materialize/open/lock scheduling functions (+ pg_cron wiring), the game-detail
 screen with a live signup list, and the admin **Series** and **Schedule**
 screens.
 
-> **Hosted Supabase** (`xfjrdirhzrajwnvcfsge`). See PHASE1_SETUP.md for linking +
-> the disable-email-confirmation step.
+> **Hosted Supabase** (`xfjrdirhzrajwnvcfsge`), managed through the **web
+> dashboard**. See PHASE1_SETUP.md for the migration workflow + the
+> disable-email-confirmation step.
 
-## 1. Push the migrations
+## 1. Apply the migrations (SQL Editor)
 
-```bash
-npx supabase db push        # applies 0005 + 0006 + 0007
-```
+**Dashboard → SQL Editor → New query** → paste and **Run**, in order:
+`0005_games_registrations_rls.sql`, `0006_registration_logic.sql`,
+`0007_scheduling.sql` (all in `supabase/migrations/`).
 
 - `0005_games_registrations_rls.sql` — RLS for `game_series` / `games` /
   `registrations`, a `(series_id, kickoff_at)` uniqueness constraint, and adds
@@ -27,8 +28,8 @@ npx supabase db push        # applies 0005 + 0006 + 0007
 ## 2. Enable pg_cron (hosted, one-time)
 
 `pg_cron` isn't enabled by default. **Dashboard → Database → Extensions →
-search "pg_cron" → enable.** Then re-run `npx supabase db push` (or run the
-scheduling `DO` block from `0007` in the SQL Editor) so the three jobs register:
+search "pg_cron" → enable.** Then re-run the scheduling `DO` block from
+`0007_scheduling.sql` in the SQL Editor so the three jobs register:
 
 | Job | Cadence | Effect |
 |---|---|---|
@@ -65,7 +66,8 @@ select * from notifications where type = 'spot_opened' order by created_at desc;
 
 ## Notes / carried forward
 
-- **Notification *delivery*** (push + in-app center + badge) is Phase 4. Phase 3
+- **Notification *delivery*** (email to the user's Supabase Auth address +
+  in-app center + badge) is Phase 4. Phase 3
   only *inserts* the `spot_opened` row; `open_registrations` deliberately does
   not enqueue `registration_open` notifications yet (added in Phase 4 with a
   dedupe guard).

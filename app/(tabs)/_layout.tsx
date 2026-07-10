@@ -1,7 +1,6 @@
 import Feather from "@expo/vector-icons/Feather";
 import { Tabs } from "expo-router";
 import { useNotificationsChannel, useUnreadCount } from "@/lib/notifications";
-import { usePushRegistration } from "@/lib/push";
 import { fonts, palette } from "@/lib/theme";
 
 // Active members: the full app shell.
@@ -24,9 +23,9 @@ const TABS: { name: string; title: string; icon: Icon }[] = [
 
 export default function TabsLayout() {
   // Session-wide wiring lives here because this layout mounts exactly once and
-  // only for active members: the push-token capture (gated on 'active' by
-  // placement) and the single Realtime channel feeding the unread badge.
-  usePushRegistration();
+  // only for active members: the single Realtime channel feeding the unread
+  // badge. Delivery is email (send-notification-email), so there is no
+  // push-token capture.
   useNotificationsChannel();
   const unread = useUnreadCount();
 

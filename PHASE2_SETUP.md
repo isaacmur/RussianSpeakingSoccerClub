@@ -5,16 +5,16 @@ Phase 2 is code-complete: season derivation + auto-assignment, the season-scoped
 RLS, the league-table leaderboard (Plus-Minus / Golden Boot tabs) wired for all
 three read tiers, and the admin baselines entry screen.
 
-> **Hosted Supabase** (project `xfjrdirhzrajwnvcfsge`) — see PHASE1_SETUP.md for
-> linking + the required "disable email confirmation" step. As of this writing
-> the hosted DB is still at Phase 1 (the `get_leaderboard` RPC 404s), so the push
-> below is required before any leaderboard screen works.
+> **Hosted Supabase** (project `xfjrdirhzrajwnvcfsge`), managed through the
+> **web dashboard** — see PHASE1_SETUP.md for the migration workflow + the
+> required "disable email confirmation" step. If the `get_leaderboard` RPC
+> 404s, these migrations haven't been applied yet.
 
-## 1. Push the new migrations to the hosted project
+## 1. Apply the new migrations (SQL Editor)
 
-```bash
-npx supabase db push        # ships 0003 + 0004 to xfjrdirhzrajwnvcfsge
-```
+**Dashboard → SQL Editor → New query** → paste and **Run**, in order:
+[`supabase/migrations/0003_seasons.sql`](supabase/migrations/0003_seasons.sql),
+then [`supabase/migrations/0004_player_stats.sql`](supabase/migrations/0004_player_stats.sql).
 
 `0003_seasons.sql` seeds the **2026** season (idempotent), and adds
 `current_season_id()` + the `set_game_season` trigger. `0004_player_stats.sql`

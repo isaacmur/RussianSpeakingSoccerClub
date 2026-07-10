@@ -39,6 +39,23 @@ function groupForStatus(status: ProfileStatus): string {
   }
 }
 
+// The concrete home screen to land on. Redirecting to a bare group path only
+// works when the group has an index route — (tabs) does, but (pending) and
+// (viewer) lead with their leaderboard, so we must target the leaf explicitly
+// or Expo Router falls through to the "Unmatched Route" screen.
+function homeForStatus(status: ProfileStatus): string {
+  switch (status) {
+    case "active":
+      return "/(tabs)";
+    case "viewer":
+      return "/(viewer)/leaderboard";
+    case "pending":
+    case "rejected":
+    default:
+      return "/(pending)/leaderboard";
+  }
+}
+
 // Redirects the user into the correct route group whenever session/profile
 // changes. Kept in a child of AuthProvider so it can read auth state.
 function RouteGuard() {
@@ -58,15 +75,15 @@ function RouteGuard() {
       return;
     }
 
-    // Signed in but sitting on an auth screen → send to their home group.
-    const target = groupForStatus(profile.status);
+    // Signed in but sitting on an auth screen → send to their home screen.
+    const home = homeForStatus(profile.status);
     if (inAuthGroup) {
-      router.replace(`/${target}` as never);
+      router.replace(home as never);
       return;
     }
 
     // Admins may roam the admin stack; otherwise keep everyone in their group.
-    const allowed = new Set<string>([target]);
+    const allowed = new Set<string>([groupForStatus(profile.status)]);
     if (profile.status === "active") {
       // Active members can open the shared game-detail stack.
       allowed.add("game");
@@ -75,7 +92,7 @@ function RouteGuard() {
     // No group means the bare index route — its spinner is only a hand-off,
     // so it must redirect too or a signed-in user is stranded on it.
     if (!group || !allowed.has(group)) {
-      router.replace(`/${target}` as never);
+      router.replace(home as never);
     }
   }, [loading, session, profile, segments, router]);
 

@@ -10,7 +10,6 @@ export type Profile = {
   avatar_url: string | null;
   role: ProfileRole;
   status: ProfileStatus;
-  expo_push_token: string | null;
   created_at: string;
 };
 

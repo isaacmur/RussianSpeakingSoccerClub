@@ -6,7 +6,7 @@ This document combines the original developer outline for the Weekend League app
 
 # Part 1 — Developer Outline
 
-Private mobile app for a ~100-player weekend soccer league with a few admins. Members sign up with email/password and are admitted by an admin. Admins schedule recurring + one-off games, open registration windows, and enter match summaries. Push notifications, live updates, and a season-only leaderboard.
+Private mobile app for a ~100-player weekend soccer league with a few admins. Members sign up with email/password and are admitted by an admin. Admins schedule recurring + one-off games, open registration windows, and enter match summaries. Email notifications (to each user's sign-in address), live updates, and a season-only leaderboard.
 
 ## 1. Stack
 
@@ -15,8 +15,8 @@ Private mobile app for a ~100-player weekend soccer league with a few admins. Me
 | App | Expo (React Native) + TypeScript, Expo Router |
 | UI | NativeWind (Tailwind) |
 | Server state | TanStack Query |
-| Backend | Supabase — Postgres, Auth, Realtime, Storage, Edge Functions, `pg_cron` |
-| Push | Expo Push Service (routes to APNs/FCM) |
+| Backend | Supabase — **hosted only** (supabase.com, managed via the web dashboard; no CLI/Docker) — Postgres, Auth, Realtime, Storage, Edge Functions, `pg_cron` |
+| Notifications | **Email to the user's Supabase Auth (sign-in) address**, sent by an Edge Function via an SMTP provider |
 | Build/dist | EAS Build/Submit → TestFlight + Play internal testing |
 
 ## 2. Repo layout
@@ -48,11 +48,10 @@ weekend-league/
 │  │  │  └─ summary/[id].tsx     # match summary entry
 │  │  └─ _layout.tsx             # routes by auth state + profile.status
 │  ├─ lib/supabase.ts
-│  ├─ lib/push.ts                # token registration + handlers
 │  └─ components/
 ├─ supabase/
 │  ├─ migrations/                # 0001_schema.sql, 0002_rls.sql, 0003_functions.sql, 0004_cron.sql
-│  └─ functions/send-push/       # Edge Function (Deno)
+│  └─ functions/send-notification-email/   # Edge Function (Deno) — emails notifications
 └─ eas.json
 ```
 
@@ -67,7 +66,7 @@ create table profiles (
   role text not null default 'player' check (role in ('player','admin')),
   status text not null default 'pending'
     check (status in ('pending','active','viewer','rejected')),  -- viewer = match report viewer
-  expo_push_token text,
+  expo_push_token text,   -- vestigial (push era); delivery is now email to the auth address
   created_at timestamptz default now()
 );
 
@@ -386,7 +385,7 @@ every 5m       : registration_open/filled → locked at kickoff_at
 
 ## 9. Notifications
 
-Each notification is a row insert. A database webhook on `notifications` insert calls the `send-push` Edge Function, which loads the target's `expo_push_token` + `notification_prefs`, drops it if the category is off, and POSTs to Expo. The in-app center and badge subscribe to the same table via Realtime.
+Each notification is a row insert. A database webhook on `notifications` insert calls the `send-notification-email` Edge Function, which looks up the target's **auth email** (the address they sign in with, via the service role) + their `notification_prefs`, drops the send if the category is off, and emails `title`/`body` through the configured SMTP provider (e.g. Resend/Postmark). The in-app center and badge subscribe to the same table via Realtime.
 
 | type | trigger | recipients |
 |---|---|---|
@@ -399,7 +398,7 @@ Each notification is a row insert. A database webhook on `notifications` insert 
 | `results_posted` | admin submits summary | that game's players |
 | `chat_mention` | @mention in a channel | mentioned user |
 
-`send-push` (Deno) skeleton: read `record.user_id` from the webhook payload → fetch token + pref for `record.type` → if enabled, `POST https://exp.host/--/api/v2/push/send` with `{ to, title, body, data:{ game_id } }`.
+`send-notification-email` (Deno) skeleton: read `record.id` from the webhook payload → re-read the row with the service role → `auth.admin.getUserById(user_id)` for the recipient's email → check the pref for `record.type` → if enabled, send `{ to: user.email, subject: title, text: body }` via the SMTP provider's API.
 
 ## 10. Realtime subscriptions
 
@@ -418,14 +417,14 @@ session? yes → load profile.status
   status = pending|rejected  → (pending)/leaderboard   (only screen available)
 ```
 
-Register the Expo push token on first `active` login; write it to `profiles.expo_push_token`.
+Notification delivery needs no client-side registration — emails go to the address already on the user's auth account.
 
 ## 12. Build sequence (original outline)
 
 1. **Foundation** — Expo + NativeWind + Expo Router scaffold; Supabase project; `profiles` + email/password auth; `_layout` routing by status; admin **Members** panel (admit as member or report viewer / reject / set role); `is_active_member`/`is_admin`/`can_view_reports` + base RLS.
 2. **Seasons & leaderboard** — `seasons`, `season_baselines`, season trigger, `player_stats` view, `get_leaderboard` RPC; leaderboard screen (Plus-Minus / Golden Boot tabs) wired for both pending and active users; admin **baselines** entry screen.
 3. **Games & registration** — `game_series`, `games`, `registrations`; materialization + window cron; register/waitlist with auto-promotion; live signup list via Realtime; admin schedule + series screens.
-4. **Notifications** — push token capture; `send-push` Edge Function + webhook; full taxonomy; prefs screen; in-app center + badge.
+4. **Notifications** — `send-notification-email` Edge Function + webhook (emails to the auth address); full taxonomy; prefs screen; in-app center + badge.
 5. **Results & reports** — admin summary panel: score, a **match-report text box**, Team A/B per attendee, and **goal scorers with counts**; writes `match_results` (incl. `summary`) + `goals` + `registrations.team`. Reports readable by members and report viewers; leaderboard refresh on submit.
 6. **Messaging** — league channel + per-game channels; realtime chat + @mentions.
 7. **Distribution** — EAS Build → TestFlight + Play internal testing; polish empty/loading states.
@@ -434,7 +433,7 @@ Register the Expo push token on first `active` login; write it to `profiles.expo
 
 ## 13. Config
 
-- **Env:** `EXPO_PUBLIC_SUPABASE_URL`, `EXPO_PUBLIC_SUPABASE_ANON_KEY`; Edge Function holds the service-role key server-side only.
+- **Env:** `EXPO_PUBLIC_SUPABASE_URL`, `EXPO_PUBLIC_SUPABASE_ANON_KEY` (already filled in `.env` from the hosted project); Edge Functions hold the service-role key + SMTP API key server-side only (Dashboard → Edge Functions → Secrets).
 - **Timezone:** store UTC, run cron in UTC, display and compute season boundaries in `America/New_York`.
 - **Accounts:** Apple Developer + Google Play developer account for store/testing distribution.
 - **Seed:** insert the current season row and the league-wide chat channel on first deploy; grant the first admin by setting `role='admin', status='active'` directly.
@@ -481,11 +480,11 @@ The phase order below follows the outline's section 12 build sequence, but restr
 
 - Create the Supabase project (hosted); record project URL + anon key.
 - Start Apple Developer Program + Google Play Console enrollment now — approval can take days, and this is currently the outline's single biggest schedule risk if left until distribution (phase 7).
-- Install the Supabase CLI and link it to the hosted project (`supabase link --project-ref <ref>`); schema is applied with `supabase db push` (no local Docker).
+- All backend management happens in the **web dashboard** (https://supabase.com/dashboard); schema is applied by running each migration file in the **SQL Editor**. No Supabase CLI, no Docker.
 - Reserve app bundle identifiers for EAS.
 - Confirm first-admin account: `imuravchiksoccer@gmail.com` (granted `role='admin', status='active'` directly via SQL after phase 1's `profiles` table exists).
 
-**DoD:** Supabase project exists and CLI is linked; Apple/Google developer applications submitted.
+**DoD:** Supabase project exists and its URL + anon key are in `.env`; Apple/Google developer applications submitted.
 
 ## Phase 1 — Foundation
 
@@ -493,7 +492,7 @@ Scaffold the app, stand up the **entire** schema (not just `profiles`), and get 
 
 **Order of work:**
 1. `npx create-expo-app`, TypeScript, Expo Router, NativeWind config.
-2. `supabase init`, then `supabase link --project-ref <ref>` to the hosted project (schema applied via `supabase db push`; no local Postgres/Docker).
+2. Write migrations as plain SQL files under `supabase/migrations/`; apply each one in the hosted project's **Dashboard → SQL Editor** (no local Postgres, no CLI).
 3. `supabase/migrations/0001_schema.sql` — create **all** tables from the outline's schema section in one migration: `profiles`, `notification_prefs`, `seasons`, `season_baselines`, `game_series`, `games`, `registrations`, `match_results`, `goals`, `channels`, `messages`, `notifications`. Creating `match_results`/`goals` here (rather than deferring to phase 5) is required so the `player_stats` view in phase 2 compiles.
 4. `supabase/migrations/0002_functions_rls.sql` — `is_active_member()`, `is_admin()`, `can_view_reports()`, then `enable row level security` on **all** tables. Write real policies for `profiles` now; for tables whose UI ships later, enabling RLS with no policy yet is safe (default-deny) and avoids retrofitting RLS onto live tables later.
 5. `lib/supabase.ts` client; `(auth)/` sign-in + sign-up screens (email/password).
@@ -523,7 +522,7 @@ Scaffold the app, stand up the **entire** schema (not just `profiles`), and get 
 
 - `0005_registrations_rls.sql` — RLS for `game_series`/`games` (select `is_active_member()`, write `is_admin()`); `registrations` (select `is_active_member()`; insert-own gated on `status='registration_open' AND now() < kickoff_at`; delete-own gated on `now() < kickoff_at`; admin full access).
 - `0006_waitlist_trigger.sql` — withdrawal trigger promotes the earliest `waitlist` row to `registered` and inserts a `spot_opened` row into `notifications` (table already exists from phase 1; consumption wired in phase 4).
-- Materialization + state-transition logic from the outline's cron section, written first as plain SQL functions callable manually (`select fn()`), then scheduled with `pg_cron` — **only against the hosted Supabase project**, since `pg_cron` isn't reliably available on local Docker. This means phase 3 needs an explicit "push migrations to hosted, enable the `pg_cron` extension" checkpoint before cron can be verified end-to-end.
+- Materialization + state-transition logic from the outline's cron section, written first as plain SQL functions callable manually (`select fn()`), then scheduled with `pg_cron`. Phase 3 needs an explicit "apply the migrations in the SQL Editor, enable the `pg_cron` extension (Dashboard → Database → Extensions)" checkpoint before cron can be verified end-to-end.
 - `admin/schedule.tsx`, `admin/series.tsx`.
 - `game/[id].tsx` — capacity meter, register/waitlist action, Realtime subscription on `registrations` filtered by `game_id`.
 
@@ -533,16 +532,15 @@ Scaffold the app, stand up the **entire** schema (not just `profiles`), and get 
 
 ## Phase 4 — Notifications
 
-- `lib/push.ts` — Expo push token capture, registered once per session but gated on `status='active'` (not just session presence), per the outline's routing logic.
-- `supabase/functions/send-push/index.ts` (Deno Edge Function) + a Database Webhook on `notifications` insert.
+- **Delivery = email to the user's Supabase Auth (sign-in) address.** A `send-notification-email` Edge Function (deployed via the dashboard editor) + a Database Webhook on `notifications` insert; the function resolves the recipient's email with the service role, honors `notification_prefs`, and sends through a configured SMTP provider (API key in Edge Function secrets).
 - Wire the full notification taxonomy: `registration_open`, `game_filled`, `needs_players`, `spot_opened`, `kickoff_reminder`, plus placeholders for `results_posted`/`chat_mention` (fully wired in phases 5–6).
 - `(tabs)/notifications.tsx` + unread badge via Realtime subscription on `notifications` filtered by `user_id`; `profile.tsx` notification-preference toggles.
 
-**DoD:** Registering for a game, a `needs_players` window, and a waitlist promotion each produce both a push and an in-app notification with correct badge count; toggling off a preference suppresses that category.
+**DoD:** Registering for a game, a `needs_players` window, and a waitlist promotion each produce both an email (to the account's sign-in address) and an in-app notification with correct badge count; toggling off a preference suppresses that category's email (the in-app row always appears).
 
-**Risk:** push testing needs a real device with an EAS dev-client build (not Expo Go, whose push support is limited/deprecated in places) — flag this early rather than discovering it during testing.
+**Risk:** the built-in Supabase mailer is rate-limited and reserved for auth flows — a real SMTP provider (Resend/Postmark/SendGrid) must be configured before email volume testing, and its key stored as an Edge Function secret.
 
-**Testing:** Supabase Dashboard → Database → Webhook logs; Expo's push notification tool to send test payloads; a physical device for real APNs/FCM delivery.
+**Testing:** Supabase Dashboard → Database → Webhook logs; Edge Function logs per send; a test inbox (any address you can sign up with) for real delivery.
 
 ## Phase 5 — Results & Reports
 
@@ -572,7 +570,7 @@ Scaffold the app, stand up the **entire** schema (not just `profiles`), and get 
 ## Cross-Cutting Notes
 
 - **Commit/PR granularity:** one PR per phase (0 excluded, since it's non-code) — each bundles its migrations, RLS, screens, and any Edge Function so the phase's DoD is reviewable as a unit.
-- **Supabase environment (hosted-only):** this project targets **hosted Supabase** (supabase.com, project `xfjrdirhzrajwnvcfsge`) — there is no local Docker workflow. Apply schema with `npx supabase db push` against the linked project after adding each migration; inspect data and simulate RLS in the Dashboard SQL Editor. Auth requires **email confirmation disabled** (Authentication → Sign In / Providers → Email), since the built-in SMTP is rate-limited and membership is gated by admin approval anyway — see PHASE1_SETUP.md. `pg_cron` and Database Webhooks (phases 3–4) are configured directly on the hosted project.
+- **Supabase environment (hosted-only, dashboard-only):** this project targets **hosted Supabase** (supabase.com, project `xfjrdirhzrajwnvcfsge`), with credentials already in `.env`. Everything backend goes through the **web dashboard** — apply each migration by running it in the SQL Editor, deploy Edge Functions via the dashboard editor, and inspect data / simulate RLS in the SQL Editor. Auth requires **email confirmation disabled** (Authentication → Sign In / Providers → Email), since the built-in SMTP is rate-limited and membership is gated by admin approval anyway — see PHASE1_SETUP.md. `pg_cron`, Database Webhooks, and Edge Function secrets (phases 3–4) are configured directly on the hosted project.
 - **Key ordering fixes vs. the raw outline** (call these out explicitly when implementing, since the outline's own section numbering doesn't sequence them this way):
   - `match_results` / `goals` tables created in phase 1's schema migration, not phase 5, so `player_stats` (phase 2) compiles.
   - `is_active_member` / `is_admin` / `can_view_reports` created before any RLS policy references them (start of phase 1).
@@ -580,9 +578,9 @@ Scaffold the app, stand up the **entire** schema (not just `profiles`), and get 
 
 ### Critical files (flattened repo root)
 - `./supabase/migrations/0001_schema.sql`, `0002_functions_rls.sql`, `0003_seasons.sql`, `0004_player_stats.sql`, `0005_registrations_rls.sql`, `0006_waitlist_trigger.sql`, `0008_messages_rls.sql`
-- `./supabase/functions/send-push/index.ts`
+- `./supabase/functions/send-notification-email/index.ts` (replaces the push-era `send-push/`)
 - `./app/_layout.tsx`, `./app/(auth)/`, `./app/(pending)/`, `./app/(viewer)/`, `./app/(tabs)/`, `./app/admin/`, `./app/game/[id].tsx`
-- `./lib/supabase.ts`, `./lib/push.ts`
+- `./lib/supabase.ts`
 - `./eas.json`
 
 ## Verification

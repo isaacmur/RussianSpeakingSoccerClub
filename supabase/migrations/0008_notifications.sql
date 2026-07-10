@@ -6,15 +6,17 @@
 --
 -- All inserts into `notifications` happen inside SECURITY DEFINER functions
 -- (RLS gives users read/update only), and every insert is the webhook signal
--- that drives a push — see supabase/functions/send-push.
+-- that drives an email — see supabase/functions/send-notification-email.
 
 -- ============================================================
 -- RLS: a user sees and updates (marks read) only their own rows. No insert or
 -- delete policy — rows are created exclusively by definer functions/triggers.
 -- ============================================================
+drop policy if exists n_self_read on notifications;
 create policy n_self_read on notifications
   for select using (user_id = auth.uid());
 
+drop policy if exists n_self_update on notifications;
 create policy n_self_update on notifications
   for update using (user_id = auth.uid())
   with check (user_id = auth.uid());
@@ -138,6 +140,7 @@ begin
   return new;
 end $$;
 
+drop trigger if exists trg_notify_game_filled on registrations;
 create trigger trg_notify_game_filled
   after insert or update on registrations
   for each row execute function notify_game_filled();
