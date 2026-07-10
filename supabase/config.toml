@@ -47,3 +47,10 @@ enable_confirmations = false
 
 [edge_runtime]
 enabled = true
+
+# send-push is invoked by a Database Webhook, which authenticates with the
+# project anon key as a Bearer token (added in the webhook's HTTP headers) —
+# JWT verification stays ON. The function re-fetches the notification row by
+# id, so a caller holding only the anon key can't push arbitrary content.
+[functions.send-push]
+verify_jwt = true

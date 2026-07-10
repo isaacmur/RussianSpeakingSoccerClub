@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { Alert, ScrollView, Text, View } from "react-native";
+import { ScrollView, Text, View } from "react-native";
 import { MarqueeSpinner } from "@/components/motif";
 import {
   ActionChip,
@@ -16,6 +16,7 @@ import {
   Subtle,
 } from "@/components/ui";
 import { useAuth } from "@/lib/auth";
+import { confirmDestructive, notify } from "@/lib/dialogs";
 import { supabase } from "@/lib/supabase";
 import { GameSeries } from "@/lib/types";
 
@@ -71,10 +72,10 @@ export default function AdminSeries() {
       qc.invalidateQueries({ queryKey: ["admin-series"] });
       qc.invalidateQueries({ queryKey: ["admin-schedule"] });
       qc.invalidateQueries({ queryKey: ["matchday"] });
-      Alert.alert("Series created", "Upcoming games have been generated.");
+      notify("Series created", "Upcoming games have been generated.");
     },
     onError: (e: unknown) =>
-      Alert.alert("Couldn't create", e instanceof Error ? e.message : String(e)),
+      notify("Couldn't create", e instanceof Error ? e.message : String(e)),
   });
 
   const toggleActive = useMutation({
@@ -87,8 +88,31 @@ export default function AdminSeries() {
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["admin-series"] }),
     onError: (e: unknown) =>
-      Alert.alert("Update failed", e instanceof Error ? e.message : String(e)),
+      notify("Update failed", e instanceof Error ? e.message : String(e)),
   });
+
+  const deleteSeries = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("game_series").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin-series"] });
+      qc.invalidateQueries({ queryKey: ["admin-schedule"] });
+      qc.invalidateQueries({ queryKey: ["matchday"] });
+    },
+    onError: (e: unknown) =>
+      notify("Delete failed", e instanceof Error ? e.message : String(e)),
+  });
+
+  const confirmDeleteSeries = (s: GameSeries) => {
+    confirmDestructive(
+      "Delete series?",
+      `"${s.title}" and ALL of its games — past and upcoming, with their registrations, results, and goals — will be permanently deleted. This cannot be undone.`,
+      "Delete",
+      () => deleteSeries.mutate(s.id)
+    );
+  };
 
   const list = data ?? [];
 
@@ -192,12 +216,20 @@ export default function AdminSeries() {
                     {s.capacity} cap
                   </Num>
                 </View>
-                <ActionChip
-                  label={s.active ? "Active" : "Paused"}
-                  tone={s.active ? "go" : "neutral"}
-                  disabled={toggleActive.isPending}
-                  onPress={() => toggleActive.mutate(s)}
-                />
+                <View className="flex-row gap-2">
+                  <ActionChip
+                    label={s.active ? "Active" : "Paused"}
+                    tone={s.active ? "go" : "neutral"}
+                    disabled={toggleActive.isPending || deleteSeries.isPending}
+                    onPress={() => toggleActive.mutate(s)}
+                  />
+                  <ActionChip
+                    label="Delete"
+                    tone="danger"
+                    disabled={toggleActive.isPending || deleteSeries.isPending}
+                    onPress={() => confirmDeleteSeries(s)}
+                  />
+                </View>
               </Card>
             ))
           )}

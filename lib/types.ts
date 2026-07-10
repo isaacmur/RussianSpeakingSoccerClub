@@ -84,6 +84,42 @@ export type SeasonBaseline = BaselineStats & {
   user_id: string;
 };
 
+// The full taxonomy. results_posted / chat_mention rows start flowing in
+// phases 5–6; the center renders them generically either way.
+export type NotificationType =
+  | "registration_open"
+  | "game_filled"
+  | "needs_players"
+  | "spot_opened"
+  | "kickoff_reminder"
+  | "roster_posted"
+  | "results_posted"
+  | "chat_mention";
+
+// "AppNotification" because bare `Notification` collides with the DOM lib type.
+export type AppNotification = {
+  id: string;
+  user_id: string;
+  type: NotificationType;
+  title: string;
+  body: string | null;
+  game_id: string | null;
+  read: boolean;
+  created_at: string;
+};
+
+// One row per user; every column defaults true. `spot_opened` has no toggle by
+// design — waitlist promotion is about your own registration.
+export type NotificationPrefs = {
+  user_id: string;
+  registration_open: boolean;
+  game_filled: boolean;
+  needs_players: boolean;
+  kickoff_reminder: boolean;
+  results_posted: boolean;
+  chat_mentions: boolean;
+};
+
 export type LeaderboardRow = {
   user_id: string;
   display_name: string;

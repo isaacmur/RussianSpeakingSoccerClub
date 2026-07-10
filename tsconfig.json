@@ -13,5 +13,8 @@
     ".expo/types/**/*.ts",
     "expo-env.d.ts",
     "nativewind-env.d.ts"
-  ]
+  ],
+  // Edge Functions are Deno code (Deno.serve, npm: imports) — they typecheck
+  // in the Supabase toolchain, not in the app's tsconfig.
+  "exclude": ["node_modules", "supabase/functions"]
 }

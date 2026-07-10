@@ -1,5 +1,7 @@
 import Feather from "@expo/vector-icons/Feather";
 import { Tabs } from "expo-router";
+import { useNotificationsChannel, useUnreadCount } from "@/lib/notifications";
+import { usePushRegistration } from "@/lib/push";
 import { fonts, palette } from "@/lib/theme";
 
 // Active members: the full app shell.
@@ -21,6 +23,13 @@ const TABS: { name: string; title: string; icon: Icon }[] = [
 ];
 
 export default function TabsLayout() {
+  // Session-wide wiring lives here because this layout mounts exactly once and
+  // only for active members: the push-token capture (gated on 'active' by
+  // placement) and the single Realtime channel feeding the unread badge.
+  usePushRegistration();
+  useNotificationsChannel();
+  const unread = useUnreadCount();
+
   return (
     <Tabs
       screenOptions={{
@@ -49,6 +58,19 @@ export default function TabsLayout() {
             tabBarIcon: ({ color, size }) => (
               <Feather name={t.icon} color={color} size={size ?? 22} />
             ),
+            // Unread count on the Alerts bell. Cyclone fill + night text —
+            // never neon-on-neon (see Badge in components/ui.tsx).
+            ...(t.name === "notifications" && unread > 0
+              ? {
+                  tabBarBadge: unread > 99 ? "99+" : unread,
+                  tabBarBadgeStyle: {
+                    backgroundColor: palette.cyclone,
+                    color: palette.night,
+                    fontFamily: fonts.bodySemi,
+                    fontSize: 11,
+                  },
+                }
+              : {}),
           }}
         />
       ))}
