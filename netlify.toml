@@ -3,8 +3,9 @@
   publish = "dist"
 
 [build.environment]
-  # Expo SDK 52 targets Node 18–22; pin an LTS so Netlify doesn't pick an untested version.
-  NODE_VERSION = "20"
+  # Static rendering runs the Supabase client in Node; @supabase/realtime-js needs a
+  # global WebSocket, which only exists in Node 22+. (Node 20 fails the build.)
+  NODE_VERSION = "22"
 
 # SPA fallback: Netlify serves existing static files first (index.html, sign-in.html,
 # admin/*, etc.), then rewrites any unmatched path — the dynamic [id] routes and
