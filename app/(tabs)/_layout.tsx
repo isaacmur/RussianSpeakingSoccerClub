@@ -44,14 +44,19 @@ export default function TabsLayout() {
           backgroundColor: palette.night,
           borderTopColor: palette.line,
           borderTopWidth: 1,
-          height: 56 + insets.bottom,
-          paddingBottom: insets.bottom + 6,
-          paddingTop: 6,
+          // Content area = height - paddingTop - paddingBottom. It must fit the
+          // 22px icon *and* the label line beneath it, or the label's top gets
+          // clipped. 68 - 4 - 8 = 56px of room; the safe-area inset is added on
+          // top so the home indicator never overlaps the labels.
+          height: 68 + insets.bottom,
+          paddingBottom: insets.bottom + 8,
+          paddingTop: 4,
         },
         tabBarLabelStyle: {
           fontFamily: fonts.displaySemi,
           fontSize: 10,
           letterSpacing: 0.8,
+          lineHeight: 14,
           textTransform: "uppercase",
         },
       }}

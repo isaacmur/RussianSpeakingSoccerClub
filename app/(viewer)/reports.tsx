@@ -4,7 +4,7 @@ import { useCallback } from "react";
 import { FlatList, Pressable, Text, View } from "react-native";
 import { MarqueeSpinner } from "@/components/motif";
 import { Card, EmptyState, Heading, Num, Screen, Subtle } from "@/components/ui";
-import { formatKickoff } from "@/lib/format";
+import { formatKickoff, matchLabel } from "@/lib/format";
 import { supabase } from "@/lib/supabase";
 import { MatchReportSummary } from "@/lib/types";
 
@@ -70,7 +70,7 @@ export function ReportCard({ report }: { report: MatchReportSummary }) {
               className="flex-1 font-display text-lg uppercase text-bone"
               numberOfLines={1}
             >
-              {report.title}
+              {matchLabel(report.kickoff_at)}
             </Text>
             <View className="flex-row items-baseline gap-1.5 pl-3">
               <Num className="font-display text-xl text-bone">

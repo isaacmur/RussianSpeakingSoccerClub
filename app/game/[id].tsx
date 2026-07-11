@@ -16,7 +16,7 @@ import {
   Subtle,
 } from "@/components/ui";
 import { useAuth } from "@/lib/auth";
-import { formatKickoff, statusLabel } from "@/lib/format";
+import { formatKickoff, matchLabel, statusLabel } from "@/lib/format";
 import { supabase } from "@/lib/supabase";
 import { palette } from "@/lib/theme";
 import { Game, RegistrationWithName } from "@/lib/types";
@@ -198,11 +198,11 @@ export default function GameDetail() {
 
   return (
     <Screen>
-      <Stack.Screen options={{ title: game.title }} />
+      <Stack.Screen options={{ title: matchLabel(game.kickoff_at) }} />
       <ScrollView contentContainerClassName="gap-5 py-4" showsVerticalScrollIndicator={false}>
         {/* Header — the kicker promotes the kickoff time out of body copy. */}
         <View className="gap-2">
-          <Heading kicker={formatKickoff(game.kickoff_at)}>{game.title}</Heading>
+          <Heading kicker={formatKickoff(game.kickoff_at)}>{matchLabel(game.kickoff_at)}</Heading>
           <View className="flex-row items-center gap-3">
             <StatusChip label={status.label} tone={status.tone} />
             {game.location ? <Subtle>· {game.location}</Subtle> : null}

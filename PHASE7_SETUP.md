@@ -42,6 +42,14 @@ apply/verify checklist.
      **Do not re-run it after ghosts have been claimed** — a claim deletes the
      ghost row, and re-seeding would resurrect it as a duplicate.
 
+3. [`supabase/migrations/0015_create_ghost.sql`](supabase/migrations/0015_create_ghost.sql)
+   - Adds the `create_ghost(p_name, p_email, p_nicknames, p_notes)` RPC (admin-only,
+     SECURITY DEFINER) so an admin can add a **single** ghost on demand — for a new
+     player who hasn't opened the app yet — instead of only via the bulk import.
+     Writes the `profiles` + `ghost_profiles` pair atomically. `tentative_email`
+     feeds the ⭐ email match when that person later signs up.
+   - Backs the new **Add ghost player** form on the Connections screen.
+
 Confirm with the sanity checks at the bottom of 0014:
 
 ```sql

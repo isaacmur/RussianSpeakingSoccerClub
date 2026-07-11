@@ -15,6 +15,21 @@ export const DAY_NAMES = [
 // viewer's device timezone (stored value is a UTC instant).
 const LEAGUE_TZ = "America/New_York";
 
+// The primary label for a match — its kickoff date, e.g. "Sat Jul 11".
+// Used everywhere a game is named (matchday, chat channels, headings, reports)
+// in place of the free-text title, so the same game reads consistently across
+// the app. Rendered in league time regardless of the viewer's device timezone.
+export function matchLabel(iso: string): string {
+  return new Date(iso)
+    .toLocaleDateString("en-US", {
+      weekday: "short",
+      month: "short",
+      day: "numeric",
+      timeZone: LEAGUE_TZ,
+    })
+    .replace(",", ""); // "Sat, Jul 11" → "Sat Jul 11"
+}
+
 // "Sat, Jul 12 · 10:00 AM ET"
 export function formatKickoff(iso: string): string {
   const d = new Date(iso);

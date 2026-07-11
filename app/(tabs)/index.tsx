@@ -4,7 +4,7 @@ import { useCallback } from "react";
 import { FlatList, Pressable, Text, View } from "react-native";
 import { MarqueeSpinner } from "@/components/motif";
 import { Card, EmptyState, Heading, Num, Screen, StatusChip, Subtle } from "@/components/ui";
-import { formatKickoff, statusLabel } from "@/lib/format";
+import { formatKickoff, matchLabel, statusLabel } from "@/lib/format";
 import { supabase } from "@/lib/supabase";
 import { Game } from "@/lib/types";
 
@@ -73,7 +73,7 @@ function GameCard({ game }: { game: Game }) {
         <Card className="gap-2 p-4">
           <View className="flex-row items-center justify-between">
             <Text className="flex-1 font-display text-lg uppercase text-bone" numberOfLines={1}>
-              {game.title}
+              {matchLabel(game.kickoff_at)}
             </Text>
             <StatusChip label={status.label} tone={status.tone} />
           </View>

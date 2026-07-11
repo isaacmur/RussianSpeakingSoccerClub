@@ -22,6 +22,7 @@ import {
 } from "@/lib/chat";
 import {
   applyMention,
+  matchLabel,
   splitMentions,
   timeAgo,
   trailingMentionQuery,
@@ -54,7 +55,11 @@ function orderChannels(channels: ChannelWithGame[]): ChannelWithGame[] {
 }
 
 const channelLabel = (c: ChannelWithGame): string =>
-  c.kind === "league" ? c.name ?? "Clubhouse" : c.games?.title ?? c.name ?? "Game";
+  c.kind === "league"
+    ? c.name ?? "Clubhouse"
+    : c.games?.kickoff_at
+      ? matchLabel(c.games.kickoff_at)
+      : c.name ?? "Game";
 
 export default function Chat() {
   const { profile } = useAuth();

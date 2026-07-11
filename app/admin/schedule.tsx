@@ -17,7 +17,7 @@ import {
 } from "@/components/ui";
 import { useAuth } from "@/lib/auth";
 import { confirmDestructive, notify } from "@/lib/dialogs";
-import { formatKickoff, statusLabel } from "@/lib/format";
+import { formatKickoff, matchLabel, statusLabel } from "@/lib/format";
 import { supabase } from "@/lib/supabase";
 import { Game, GameStatus } from "@/lib/types";
 
@@ -306,7 +306,7 @@ function GameAdminRow({
       <Link href={{ pathname: "/game/[id]", params: { id: game.id } }} asChild>
         <Pressable className="gap-1">
           <Text className="font-display text-base uppercase text-bone">
-            {game.title}
+            {matchLabel(game.kickoff_at)}
           </Text>
           <Num className="font-body text-sm text-steel">
             {formatKickoff(game.kickoff_at)}

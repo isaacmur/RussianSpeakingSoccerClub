@@ -8,6 +8,7 @@ import {
   Button,
   Card,
   EmptyState,
+  Field,
   Heading,
   Label,
   Num,
@@ -101,6 +102,22 @@ export default function AdminConnections() {
       notify("Link failed", e instanceof Error ? e.message : String(e)),
   });
 
+  const createGhost = useMutation({
+    mutationFn: async ({ name, email }: { name: string; email: string }) => {
+      const { error } = await supabase.rpc("create_ghost", {
+        p_name: name.trim(),
+        p_email: email.trim() || null,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      // The new ghost lands in the unclaimed reference list + game pickers.
+      qc.invalidateQueries({ queryKey: ["admin-connections"] });
+    },
+    onError: (e: unknown) =>
+      notify("Couldn't add ghost", e instanceof Error ? e.message : String(e)),
+  });
+
   const confirmClaim = (realName: string, ghostName: string, real: string, ghost: string) =>
     confirmDestructive(
       "Link accounts?",
@@ -127,6 +144,11 @@ export default function AdminConnections() {
       <View className="pt-1">
         <Heading kicker={`${ghosts.length} unclaimed`}>Connections</Heading>
       </View>
+
+      <NewGhostForm
+        busy={createGhost.isPending}
+        onCreate={(name, email) => createGhost.mutateAsync({ name, email })}
+      />
 
       <FlatList
         data={rows}
@@ -160,6 +182,85 @@ export default function AdminConnections() {
         ListFooterComponent={<GhostReference ghosts={ghosts} />}
       />
     </Screen>
+  );
+}
+
+// Collapsible "sign up a new player who isn't on the app yet" form. Creates a
+// ghost (create_ghost RPC); it appears in the unclaimed list below and in the
+// game-screen Add-player picker. Email is optional but, when given, lets the
+// ⭐ email-match auto-suggest linking once that person actually signs up.
+function NewGhostForm({
+  busy,
+  onCreate,
+}: {
+  busy: boolean;
+  onCreate: (name: string, email: string) => Promise<unknown>;
+}) {
+  const [open, setOpen] = useState(false);
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+
+  const submit = async () => {
+    if (!name.trim() || busy) return;
+    try {
+      await onCreate(name, email);
+      setName("");
+      setEmail("");
+      setOpen(false);
+    } catch {
+      // onError already surfaced the message; keep the inputs so they can retry.
+    }
+  };
+
+  if (!open) {
+    return (
+      <Pressable onPress={() => setOpen(true)} hitSlop={8} className="py-3">
+        <Text className="font-display-semi text-xs uppercase tracking-wider text-luna">
+          + Add ghost player
+        </Text>
+      </Pressable>
+    );
+  }
+
+  return (
+    <Card className="my-3 gap-3 p-4">
+      <Label>New ghost player</Label>
+      <Field
+        label="Name"
+        value={name}
+        onChangeText={setName}
+        placeholder="Player name"
+        autoCapitalize="words"
+        autoCorrect={false}
+      />
+      <Field
+        label="Email (optional)"
+        value={email}
+        onChangeText={setEmail}
+        placeholder="Used to auto-link when they sign up"
+        autoCapitalize="none"
+        autoCorrect={false}
+        keyboardType="email-address"
+      />
+      <View className="flex-row gap-2">
+        <View className="flex-1">
+          <Button
+            title="Add"
+            loading={busy}
+            disabled={!name.trim()}
+            onPress={submit}
+          />
+        </View>
+        <View className="flex-1">
+          <Button
+            title="Cancel"
+            variant="ghost"
+            disabled={busy}
+            onPress={() => setOpen(false)}
+          />
+        </View>
+      </View>
+    </Card>
   );
 }
 

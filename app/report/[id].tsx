@@ -11,7 +11,7 @@ import {
   Screen,
   Subtle,
 } from "@/components/ui";
-import { formatKickoff } from "@/lib/format";
+import { formatKickoff, matchLabel } from "@/lib/format";
 import { supabase } from "@/lib/supabase";
 import { palette } from "@/lib/theme";
 import { MatchReport, ReportRosterEntry } from "@/lib/types";
@@ -61,12 +61,12 @@ export default function ReportDetail() {
 
   return (
     <Screen>
-      <Stack.Screen options={{ title: game.title }} />
+      <Stack.Screen options={{ title: matchLabel(game.kickoff_at) }} />
       <ScrollView
         contentContainerClassName="gap-5 py-4"
         showsVerticalScrollIndicator={false}
       >
-        <Heading kicker={formatKickoff(game.kickoff_at)}>{game.title}</Heading>
+        <Heading kicker={formatKickoff(game.kickoff_at)}>{matchLabel(game.kickoff_at)}</Heading>
 
         {result ? (
           <>

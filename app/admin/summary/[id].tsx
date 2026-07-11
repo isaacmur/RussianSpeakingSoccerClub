@@ -5,7 +5,7 @@ import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { MarqueeSpinner } from "@/components/motif";
 import { Button, Card, Heading, Label, Num, Screen, Subtle } from "@/components/ui";
 import { notify } from "@/lib/dialogs";
-import { formatKickoff } from "@/lib/format";
+import { formatKickoff, matchLabel } from "@/lib/format";
 import { supabase } from "@/lib/supabase";
 import { palette } from "@/lib/theme";
 import {
@@ -188,7 +188,7 @@ export default function AdminSummary() {
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
-        <Heading kicker={formatKickoff(game.kickoff_at)}>{game.title}</Heading>
+        <Heading kicker={formatKickoff(game.kickoff_at)}>{matchLabel(game.kickoff_at)}</Heading>
 
         {/* Scoreline */}
         <View className="gap-2">
