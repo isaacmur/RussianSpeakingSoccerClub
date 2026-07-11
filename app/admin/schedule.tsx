@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Link } from "expo-router";
+import { Link, useRouter } from "expo-router";
 import { useState } from "react";
 import { FlatList, Pressable, Text, View } from "react-native";
 import { MarqueeSpinner } from "@/components/motif";
@@ -23,6 +23,7 @@ import { Game, GameStatus } from "@/lib/types";
 
 export default function AdminSchedule() {
   const qc = useQueryClient();
+  const router = useRouter();
   const { profile } = useAuth();
 
   const [showOneOff, setShowOneOff] = useState(false);
@@ -262,6 +263,12 @@ export default function AdminSchedule() {
               busy={setStatus.isPending || deleteGame.isPending}
               onSetStatus={(status) => setStatus.mutate({ id: item.id, status })}
               onDelete={() => confirmDelete(item)}
+              onEnterResult={() =>
+                router.push({
+                  pathname: "/admin/summary/[id]",
+                  params: { id: item.id },
+                })
+              }
             />
           )}
         />
@@ -275,14 +282,24 @@ function GameAdminRow({
   busy,
   onSetStatus,
   onDelete,
+  onEnterResult,
 }: {
   game: Game;
   busy: boolean;
   onSetStatus: (status: GameStatus) => void;
   onDelete: () => void;
+  onEnterResult: () => void;
 }) {
   const status = statusLabel(game.status);
   const done = game.status === "completed" || game.status === "cancelled";
+  // Results can be entered once the game is locked / underway / over, or any
+  // time kickoff has passed — the point at which there's a score to record.
+  const canEnterResult =
+    game.status === "locked" ||
+    game.status === "in_progress" ||
+    game.status === "completed" ||
+    (game.status !== "cancelled" &&
+      new Date(game.kickoff_at).getTime() < Date.now());
 
   return (
     <Card className="gap-3 p-4">
@@ -309,6 +326,14 @@ function GameAdminRow({
         ) : null}
         {game.status === "registration_open" || game.status === "filled" ? (
           <ActionChip label="Lock" disabled={busy} onPress={() => onSetStatus("locked")} />
+        ) : null}
+        {canEnterResult ? (
+          <ActionChip
+            label={game.status === "completed" ? "Edit result" : "Enter result"}
+            tone="go"
+            disabled={busy}
+            onPress={onEnterResult}
+          />
         ) : null}
         {!done ? (
           <ActionChip

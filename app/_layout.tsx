@@ -84,6 +84,11 @@ function RouteGuard() {
 
     // Admins may roam the admin stack; otherwise keep everyone in their group.
     const allowed = new Set<string>([groupForStatus(profile.status)]);
+    // Match reports are read-only and shared by both read tiers — members reach
+    // them from Matchday, report viewers from the Reports tab.
+    if (profile.status === "active" || profile.status === "viewer") {
+      allowed.add("report");
+    }
     if (profile.status === "active") {
       // Active members can open the shared game-detail stack.
       allowed.add("game");

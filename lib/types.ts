@@ -129,3 +129,59 @@ export type LeaderboardRow = {
   plus_minus: number;
   goals: number;
 };
+
+// ── Results & reports (phase 5) ─────────────────────────────────────────────
+
+export type MatchResult = {
+  game_id: string;
+  team_a_score: number;
+  team_b_score: number;
+  summary: string | null;
+  entered_by: string | null;
+  entered_at: string;
+};
+
+export type Goal = {
+  id: string;
+  game_id: string;
+  scorer_id: string;
+  team: "A" | "B";
+  count: number;
+};
+
+// One attendee in a report bundle: the side they played and goals they scored.
+export type ReportRosterEntry = {
+  user_id: string;
+  display_name: string;
+  team: "A" | "B" | null;
+  goals: number;
+};
+
+// The get_match_report() RPC bundle. `result` is null until a summary is entered.
+export type MatchReport = {
+  game: {
+    id: string;
+    title: string;
+    kickoff_at: string;
+    location: string | null;
+    status: GameStatus;
+  } | null;
+  result: {
+    team_a_score: number;
+    team_b_score: number;
+    summary: string | null;
+    entered_at: string;
+  } | null;
+  roster: ReportRosterEntry[];
+};
+
+// One row of the list_match_reports() RPC — the Reports/recent feed.
+export type MatchReportSummary = {
+  game_id: string;
+  title: string;
+  kickoff_at: string;
+  location: string | null;
+  team_a_score: number;
+  team_b_score: number;
+  summary: string | null;
+};

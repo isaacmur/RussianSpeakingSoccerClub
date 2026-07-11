@@ -37,7 +37,11 @@ export default function Notifications() {
 
   const open = (n: AppNotification) => {
     if (!n.read) markRead.mutate(n.id);
-    if (n.game_id) router.push(`/game/${n.game_id}`);
+    if (!n.game_id) return;
+    // A posted result opens the match report; everything else opens game detail.
+    if (n.type === "results_posted")
+      router.push({ pathname: "/report/[id]", params: { id: n.game_id } });
+    else router.push(`/game/${n.game_id}`);
   };
 
   return (

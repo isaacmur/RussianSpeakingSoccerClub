@@ -58,8 +58,14 @@ export default function Matchday() {
 
 function GameCard({ game }: { game: Game }) {
   const status = statusLabel(game.status);
+  // Completed games open their match report; everything else opens game detail
+  // (capacity meter, register/waitlist, team sheet).
+  const href =
+    game.status === "completed"
+      ? { pathname: "/report/[id]" as const, params: { id: game.id } }
+      : { pathname: "/game/[id]" as const, params: { id: game.id } };
   return (
-    <Link href={{ pathname: "/game/[id]", params: { id: game.id } }} asChild>
+    <Link href={href} asChild>
       {/* No <Neon> here: this renders per-row, and a real two-layer shadow on
           every FlatList item stalls scrolling on mid-range Android. The lit
           StatusChip dot carries the state instead. */}

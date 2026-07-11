@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Stack, useLocalSearchParams } from "expo-router";
+import { Link, Stack, useLocalSearchParams } from "expo-router";
 import { useEffect } from "react";
 import { Alert, ScrollView, Text, View } from "react-native";
 import { MarqueeSpinner, WonderWheel } from "@/components/motif";
@@ -205,6 +205,14 @@ export default function GameDetail() {
             </View>
           ) : null}
         </Card>
+
+        {/* Completed games lead with their report — the register/waitlist
+            controls below are moot once there's a result. */}
+        {game.status === "completed" ? (
+          <Link href={{ pathname: "/report/[id]", params: { id } }} asChild>
+            <Button title="View match report" variant="ghost" />
+          </Link>
+        ) : null}
 
         {/* Your registration + action */}
         <View className="gap-3">
