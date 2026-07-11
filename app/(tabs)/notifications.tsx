@@ -37,6 +37,12 @@ export default function Notifications() {
 
   const open = (n: AppNotification) => {
     if (!n.read) markRead.mutate(n.id);
+    // A mention opens the Clubhouse (the row's game_id, when set, is just the
+    // game channel's game — the chat, not game detail, is where the @ lives).
+    if (n.type === "chat_mention") {
+      router.push("/(tabs)/chat");
+      return;
+    }
     if (!n.game_id) return;
     // A posted result opens the match report; everything else opens game detail.
     if (n.type === "results_posted")

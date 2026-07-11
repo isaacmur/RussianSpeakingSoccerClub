@@ -185,3 +185,39 @@ export type MatchReportSummary = {
   team_b_score: number;
   summary: string | null;
 };
+
+// ── Messaging (phase 6) ─────────────────────────────────────────────────────
+
+export type ChannelKind = "league" | "game";
+
+export type Channel = {
+  id: string;
+  kind: ChannelKind;
+  game_id: string | null;
+  name: string | null;
+};
+
+// A channel joined to its game (null for the league channel), so the Clubhouse
+// switcher can order + filter game channels by kickoff and status.
+export type ChannelWithGame = Channel & {
+  games: { status: GameStatus; kickoff_at: string; title: string } | null;
+};
+
+export type Message = {
+  id: string;
+  channel_id: string;
+  user_id: string;
+  body: string;
+  created_at: string;
+};
+
+// A message joined to its author's display name, for the chat list.
+export type MessageWithAuthor = Message & {
+  profiles: { display_name: string } | null;
+};
+
+// The subset of a profile the mention autocomplete needs.
+export type MemberRef = {
+  id: string;
+  display_name: string;
+};

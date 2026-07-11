@@ -48,6 +48,54 @@ export function timeAgo(iso: string): string {
   });
 }
 
+// ── Mentions (phase 6) ──────────────────────────────────────────────────────
+
+// The in-progress @mention at the very end of the composer, or null. Matches an
+// '@' that starts the input or follows whitespace, then the (possibly empty)
+// run of non-space chars typed so far — so "hey @jo" yields "jo" but a completed
+// "@John Smith " (trailing space) yields null and stops re-triggering.
+export function trailingMentionQuery(text: string): string | null {
+  const m = /(?:^|\s)@([^\s@]*)$/.exec(text);
+  return m ? m[1] : null;
+}
+
+// Replace that trailing "@query" with the picked "@Full Name " (trailing space).
+export function applyMention(text: string, name: string): string {
+  return text.replace(/@[^\s@]*$/, `@${name} `);
+}
+
+function escapeRegExp(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+// Split a message body into plain runs and "@Name" mention runs, matching only
+// against real member names (longest first, so "@John Smith" wins over "@John").
+// The caller styles the mention runs; everything else renders as-is.
+export function splitMentions(
+  body: string,
+  names: string[]
+): { text: string; mention: boolean }[] {
+  const usable = names.filter((n) => n.trim().length > 0);
+  if (usable.length === 0) return [{ text: body, mention: false }];
+
+  const alts = [...usable]
+    .sort((a, b) => b.length - a.length)
+    .map(escapeRegExp)
+    .join("|");
+  const re = new RegExp(`@(?:${alts})`, "gi");
+
+  const out: { text: string; mention: boolean }[] = [];
+  let last = 0;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(body))) {
+    if (m.index > last) out.push({ text: body.slice(last, m.index), mention: false });
+    out.push({ text: m[0], mention: true });
+    last = m.index + m[0].length;
+  }
+  if (last < body.length) out.push({ text: body.slice(last), mention: false });
+  return out;
+}
+
 // Short human label + semantic tone for a game status.
 //
 // Tones are deliberately *not* color names. This used to return
