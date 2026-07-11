@@ -20,6 +20,7 @@ export default function AdminLayout() {
       }}
     >
       <Stack.Screen name="members" options={{ title: "Members" }} />
+      <Stack.Screen name="connections" options={{ title: "Connections" }} />
       <Stack.Screen name="baselines" options={{ title: "Baselines" }} />
       <Stack.Screen name="series" options={{ title: "Series" }} />
       <Stack.Screen name="schedule" options={{ title: "Schedule" }} />

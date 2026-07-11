@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, Stack, useLocalSearchParams } from "expo-router";
-import { useEffect } from "react";
-import { Alert, ScrollView, Text, View } from "react-native";
+import { useEffect, useMemo, useState } from "react";
+import { Alert, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { MarqueeSpinner, WonderWheel } from "@/components/motif";
 import {
   Badge,
@@ -20,6 +20,9 @@ import { formatKickoff, statusLabel } from "@/lib/format";
 import { supabase } from "@/lib/supabase";
 import { palette } from "@/lib/theme";
 import { Game, RegistrationWithName } from "@/lib/types";
+
+// A profile row trimmed to what the admin add-player picker needs.
+type RosterEntry = { id: string; display_name: string };
 
 export default function GameDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -94,6 +97,53 @@ export default function GameDetail() {
           .update({ status: "withdrawn" })
           .eq("game_id", id)
           .eq("user_id", profile!.id);
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["game-regs", id] });
+      qc.invalidateQueries({ queryKey: ["game", id] });
+    },
+    onError: (e: unknown) =>
+      Alert.alert("Couldn't update", e instanceof Error ? e.message : String(e)),
+  });
+
+  const isAdmin = profile?.role === "admin";
+
+  // Which registered/waitlisted profiles are ghosts, so the list can tag the
+  // "no app" players. Admin-only — active members can read ghost_profiles too,
+  // but only admins see the tags/controls.
+  const ghostIdsQ = useQuery({
+    queryKey: ["ghost-ids"],
+    enabled: isAdmin,
+    queryFn: async (): Promise<Set<string>> => {
+      const { data, error } = await supabase
+        .from("ghost_profiles")
+        .select("profile_id");
+      if (error) throw error;
+      return new Set((data as { profile_id: string }[]).map((g) => g.profile_id));
+    },
+  });
+
+  // Admin registers/withdraws any profile (active member or ghost). RLS
+  // r_admin_all permits it; the BEFORE trigger waitlists an add if the game is
+  // full, and a withdraw fires waitlist promotion — same engine as self-serve.
+  const adminReg = useMutation({
+    mutationFn: async (v: { userId: string; action: "add" | "remove" }) => {
+      if (v.action === "add") {
+        const { error } = await supabase
+          .from("registrations")
+          .upsert(
+            { game_id: id, user_id: v.userId, status: "registered" },
+            { onConflict: "game_id,user_id" }
+          );
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from("registrations")
+          .update({ status: "withdrawn" })
+          .eq("game_id", id)
+          .eq("user_id", v.userId);
         if (error) throw error;
       }
     },
@@ -255,11 +305,26 @@ export default function GameDetail() {
 
         <BulbString />
 
+        {/* Admin: register a roster player who has no app account (or any
+            member) directly. */}
+        {isAdmin ? (
+          <AdminAddPlayer
+            excludeIds={new Set(regs.map((r) => r.user_id))}
+            ghostIds={ghostIdsQ.data ?? new Set()}
+            busy={adminReg.isPending}
+            onAdd={(userId) => adminReg.mutate({ userId, action: "add" })}
+          />
+        ) : null}
+
         {/* Team sheet */}
         <SignupList
           title={`Registered (${registered.length})`}
           rows={registered}
           youId={profile?.id}
+          isAdmin={isAdmin}
+          ghostIds={ghostIdsQ.data}
+          removing={adminReg.isPending}
+          onRemove={(userId) => adminReg.mutate({ userId, action: "remove" })}
         />
         {waitlist.length > 0 ? (
           <SignupList
@@ -267,6 +332,10 @@ export default function GameDetail() {
             rows={waitlist}
             youId={profile?.id}
             spark
+            isAdmin={isAdmin}
+            ghostIds={ghostIdsQ.data}
+            removing={adminReg.isPending}
+            onRemove={(userId) => adminReg.mutate({ userId, action: "remove" })}
           />
         ) : null}
       </ScrollView>
@@ -279,11 +348,19 @@ function SignupList({
   rows,
   youId,
   spark = false,
+  isAdmin = false,
+  ghostIds,
+  removing = false,
+  onRemove,
 }: {
   title: string;
   rows: RegistrationWithName[];
   youId?: string;
   spark?: boolean;
+  isAdmin?: boolean;
+  ghostIds?: Set<string>;
+  removing?: boolean;
+  onRemove?: (userId: string) => void;
 }) {
   return (
     <View className="gap-2">
@@ -296,6 +373,7 @@ function SignupList({
         ) : (
           rows.map((r, i) => {
             const you = r.user_id === youId;
+            const ghost = isAdmin && !!ghostIds?.has(r.user_id);
             return (
               <View
                 key={r.id}
@@ -303,7 +381,7 @@ function SignupList({
                   i > 0 ? "border-t border-line/50" : ""
                 }`}
               >
-                <View className="flex-row items-center gap-3">
+                <View className="flex-1 flex-row items-center gap-3">
                   {/* squad number = position in the list. Inter, not Oswald:
                       this is a column, and Oswald ships no tnum feature. */}
                   <Num className="w-5 font-body-semi text-xs text-steel">{i + 1}</Num>
@@ -312,14 +390,128 @@ function SignupList({
                   >
                     {r.profiles?.display_name ?? "Player"}
                   </Text>
+                  {ghost ? <Badge color={palette.steel}>no app</Badge> : null}
                 </View>
-                {you ? (
-                  <Badge color={spark ? palette.ferris : palette.wonder}>You</Badge>
-                ) : null}
+                <View className="flex-row items-center gap-2">
+                  {you ? (
+                    <Badge color={spark ? palette.ferris : palette.wonder}>You</Badge>
+                  ) : null}
+                  {isAdmin && onRemove ? (
+                    <Pressable
+                      disabled={removing}
+                      hitSlop={10}
+                      onPress={() => onRemove(r.user_id)}
+                      className={removing ? "opacity-40" : ""}
+                    >
+                      <Text className="font-display text-base text-cyclone-lit">✕</Text>
+                    </Pressable>
+                  ) : null}
+                </View>
               </View>
             );
           })
         )}
+      </Card>
+    </View>
+  );
+}
+
+// Admin-only: register a member or ghost who isn't already on the list. Ghosts
+// carry a "no app" tag — they have no session and can't self-register.
+function AdminAddPlayer({
+  excludeIds,
+  ghostIds,
+  busy,
+  onAdd,
+}: {
+  excludeIds: Set<string>;
+  ghostIds: Set<string>;
+  busy: boolean;
+  onAdd: (userId: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [q, setQ] = useState("");
+
+  const rosterQ = useQuery<RosterEntry[]>({
+    queryKey: ["eligible-roster"],
+    enabled: open,
+    queryFn: async (): Promise<RosterEntry[]> => {
+      // Active profiles = real members + ghosts (both status='active').
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("id, display_name")
+        .eq("status", "active")
+        .order("display_name", { ascending: true });
+      if (error) throw error;
+      return data as RosterEntry[];
+    },
+  });
+
+  const matches = useMemo(() => {
+    const needle = q.trim().toLowerCase();
+    const all: RosterEntry[] = rosterQ.data ?? [];
+    const list = all.filter((p) => !excludeIds.has(p.id));
+    const filtered = needle
+      ? list.filter((p) => p.display_name.toLowerCase().includes(needle))
+      : list;
+    return filtered.slice(0, 40);
+  }, [rosterQ.data, excludeIds, q]);
+
+  return (
+    <View className="gap-2">
+      <Card className="gap-3 p-4">
+        <Pressable
+          onPress={() => setOpen((o) => !o)}
+          className="flex-row items-center justify-between"
+        >
+          <Text className="font-display text-base uppercase tracking-wide text-luna">
+            Add player
+          </Text>
+          <Text className="font-display-semi text-xs uppercase tracking-wider text-steel">
+            {open ? "Close" : "Open"}
+          </Text>
+        </Pressable>
+
+        {open ? (
+          <View className="gap-2">
+            <Subtle>
+              Ghosts have no app account — the app can’t notify them, so tell them
+              in person.
+            </Subtle>
+            <TextInput
+              value={q}
+              onChangeText={setQ}
+              placeholder="Search players…"
+              placeholderTextColor={palette.steel}
+              autoCorrect={false}
+              className="h-11 rounded-lg border border-line bg-night px-3 font-body text-base text-bone"
+            />
+            {rosterQ.isLoading ? (
+              <Subtle>Loading roster…</Subtle>
+            ) : matches.length === 0 ? (
+              <Subtle>No eligible players{q ? ` for “${q}”` : ""}.</Subtle>
+            ) : (
+              matches.map((p) => {
+                const ghost = ghostIds.has(p.id);
+                return (
+                  <Pressable
+                    key={p.id}
+                    disabled={busy}
+                    onPress={() => onAdd(p.id)}
+                    className={`flex-row items-center justify-between rounded-lg border border-line bg-night px-3 py-2.5 ${
+                      busy ? "opacity-40" : ""
+                    }`}
+                  >
+                    <Text className="font-body text-base text-bone">
+                      {p.display_name}
+                    </Text>
+                    {ghost ? <Badge color={palette.steel}>no app</Badge> : null}
+                  </Pressable>
+                );
+              })
+            )}
+          </View>
+        ) : null}
       </Card>
     </View>
   );

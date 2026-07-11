@@ -1,0 +1,76 @@
+stats_name,stats_row,games,wins,draws,losses,goals,plus_minus,suggested_canonical,match_by,action,baseline,review_note
+Boris,1,36,17,9,10,1,7,Boris,name,link,yes,
+Mohammed,2,20,11,3,6,5,5,Mohammed,name,link,yes,
+Vadim,3,46,21,9,16,1,5,Vadim,name,link,yes,
+Emre,4,33,16,6,11,10,5,Emre,name,link,yes,
+Lyonchik,5,16,9,2,5,0,4,Lyonchik,name,link,yes,
+Isaac,6,13,7,3,3,11,4,Isaac,name,link,yes,
+Dmitro,7,11,6,2,3,1,3,Dmitro,name,link,yes,
+Igor Tall,8,3,3,0,0,1,3,,none,new,yes,RESOLVED: separate person from canonical Igor — create new ghost 'Igor Tall'.
+Matthew,9,12,6,3,3,14,3,Matthew,name,link,yes,Distinct from Matt (row 10) — do not merge.
+Matt,10,30,13,7,10,21,3,Matt,name,link,yes,Distinct from Matthew (row 9) — do not merge.
+Gary,11,11,6,2,3,12,3,Gary,name,link,yes,
+Oleg,12,35,15,7,13,2,2,Oleg,name,link,yes,
+Boroda,13,16,7,4,5,0,2,Boroda,name,link,yes,Distinct from Boris (confirmed).
+Oleg new (Stas),14,9,4,3,2,5,2,Stas,fuzzy,link,yes,RESOLVED: this is canonical 'Stas' — baseline goes to Stas.
+Eri,15,3,2,1,0,1,2,Eri,name,link,yes,
+Sal,16,2,2,0,0,0,2,,none,new,yes,RESOLVED: new stats-only ghost 'Sal'.
+Alan,17,17,7,5,5,8,2,Alan,name,link,yes,
+Yura Young,18,8,4,2,2,9,2,Yura Young,name,link,yes,Distinct from 'Yura Matchpoint' (row 28).
+Nicholas,19,6,4,0,2,2,2,Nicholas,name,link,yes,Distinct from 'Nick Brazil' (row 35).
+Zhenya Def,20,27,11,7,9,1,2,Zhenya Def,name,link,yes,Distinct from Zhenya Br (row 41).
+Vova Br,21,6,4,0,2,0,2,Vova Br,name,link,yes,
+Joe,22,13,6,3,4,6,2,Joe,name,link,yes,Distinct from Joey (canonical, no stats) — do not merge.
+Sandrik,23,20,9,3,8,2,1,Sandrik,name,link,yes,
+Muchnik,24,15,6,4,5,5,1,Muchnik,name,link,yes,
+Misha L,25,7,3,2,2,0,1,Misha L,name,link,yes,Distinct from Misha SI / Misha Forward.
+Denis son,26,17,7,4,6,12,1,,none,new,yes,RESOLVED: separate person from canonical Denis — new ghost 'Denis son'.
+Vito,27,15,7,2,6,0,1,Vito,name,link,yes,
+Yura Matchpoint,28,7,3,2,2,0,1,,none,new,yes,RESOLVED: separate person from Yura Young — new ghost 'Yura Matchpoint'.
+Bogdan,29,8,4,1,3,5,1,Bogdan,name,link,yes,
+Gera,30,4,2,1,1,4,1,Gera,name,link,yes,
+Marc Stolyar,31,4,2,1,1,6,1,Marc,surname,link,yes,Canonical Marc email is stolyarmarc18@gmail.com — same person.
+Shenthen,32,3,2,0,1,2,1,,none,new,yes,RESOLVED: new stats-only ghost 'Shenthen'.
+Rufat,33,1,1,0,0,0,1,Rufat,name,link,yes,
+Andrew (sergey's son),34,1,1,0,0,0,1,,none,new,yes,RESOLVED: distinct from canonical Andrey — new ghost.
+Nick Brazil,35,1,1,0,0,0,1,,none,new,yes,RESOLVED: distinct from canonical Nicholas — new ghost.
+Varenik,36,5,2,1,2,3,0,Varenik,name,link,yes,
+Misha SI,37,3,1,1,1,1,0,Misha SI,name,link,yes,Distinct from other Mishas.
+Misha Forward,38,2,1,0,1,3,0,Misha Forward,name,link,yes,Distinct from other Mishas.
+Lesha,39,9,4,1,4,3,0,Lesha,name,link,yes,
+Kimran,40,37,15,6,16,22,-1,Kimran,name,link,yes,
+Zhenya Br,41,6,2,1,3,3,-1,Zhenya Br,name,link,yes,Distinct from Zhenya Def (row 20).
+Mike father,42,5,1,2,2,0,-1,,none,new,yes,"RESOLVED: separate person from canonical Mike. 'Mike father' is his name — new ghost."
+Johathan,43,7,1,4,2,4,-1,Jonathan,fuzzy (typo),link,yes,Vadim's typo of Jonathan.
+Constantin,44,6,2,1,3,0,-1,Constantin,name,link,yes,
+Leo,45,4,1,1,2,4,-1,Leo,name,link,yes,
+Sergey SI,46,1,0,0,1,0,-1,,none,new,yes,RESOLVED: new stats-only ghost 'Sergey SI'.
+Justin,47,1,0,0,1,0,-1,,none,new,yes,RESOLVED: new stats-only ghost 'Justin'.
+Max,48,22,9,3,10,8,-1,Max,name,link,yes,Distinct from Maxim (row 61) — do not merge.
+Dima SI,49,15,6,2,7,5,-1,Dima SI,name,link,yes,
+Slava,50,16,5,4,7,6,-2,Slava,name,link,yes,
+Russell,51,15,5,3,7,8,-2,Russell,name,link,yes,
+Gena,52,8,2,2,4,2,-2,Gena,name,link,yes,
+Alik,53,8,2,2,4,4,-2,Alik,name,link,yes,
+Kolya,54,4,1,0,3,1,-2,Kolya,name,link,yes,
+Elan,55,4,1,0,3,4,-2,Elan,name,link,yes,
+Igor,56,18,6,4,8,0,-2,Igor,name,link,yes,RESOLVED: this row's stats belong to canonical Igor (Igor Tall row 8 is the separate one).
+Rustem,57,18,6,4,8,0,-2,Rustem,name,link,yes,
+Mercky,58,4,1,0,3,1,-2,Mercky,name,link,yes,
+Edik,59,40,14,9,17,6,-3,Edik,name,link,yes,Eduard -> Edik.
+Mussa,60,9,3,0,6,1,-3,Mussa,name,link,yes,Distinct from Mohammed (row 2).
+Maxim,61,11,3,2,6,4,-3,Maxim,name,link,yes,Distinct from Max (row 48) — do not merge.
+Sasha Ru,62,34,12,7,15,2,-3,Sasha Ru,name,link,yes,Distinct from Sasha SI (row 65).
+Jake,63,18,5,3,10,9,-5,Jake,name,link,yes,
+Semen,64,20,6,3,11,0,-5,Semyon,fuzzy,link,yes,Semen -> Semyon.
+Sasha SI,65,20,5,4,11,2,-6,Sasha SI,name,link,yes,Distinct from Sasha Ru (row 62).
+Yasha,66,25,6,7,12,5,-6,Yasha,name,link,yes,
+Kirill,67,20,4,5,11,11,-7,Kirill,name,link,yes,
+Vitalik,68,13,2,2,9,1,-7,Vitalik,name,link,yes,
+,-,,,,,,,Urban,canonical,link,no,Canonical roster, no 2026 stats. Ghost profile only. (Possibly 'Misha Urban'.)
+,-,,,,,,,Joey,canonical,link,no,"Canonical roster, no 2026 stats. Distinct from Joe (row 22)."
+,-,,,,,,,Oscar,canonical,link,no,"Canonical roster, no 2026 stats. Low frequency."
+,-,,,,,,,Ari,canonical,link,no,"Canonical roster, no 2026 stats. Low frequency."
+,-,,,,,,,Denis,canonical,link,no,"Canonical roster, no 2026 stats of his own (row 26 'Denis son' is a separate person). Ghost profile only."
+,-,,,,,,,Mike,canonical,link,no,"Canonical roster, no 2026 stats of his own (row 42 'Mike father' is a separate person). Ghost profile only."
+,-,,,,,,,Andrey,canonical,link,no,"Canonical roster (andreyyf@aol.com), no 2026 stats. Distinct from row 34 'Andrew (sergey's son)'."

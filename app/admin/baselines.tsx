@@ -45,7 +45,7 @@ export default function AdminBaselines() {
   const { data, isLoading } = useQuery({
     queryKey: ["admin-baselines"],
     queryFn: async () => {
-      const [seasonRes, playersRes, baselinesRes] = await Promise.all([
+      const [seasonRes, playersRes, baselinesRes, ghostsRes] = await Promise.all([
         supabase.rpc("current_season_id"),
         supabase
           .from("profiles")
@@ -53,18 +53,25 @@ export default function AdminBaselines() {
           .eq("status", "active")
           .order("display_name", { ascending: true }),
         supabase.from("season_baselines").select("*"),
+        supabase.from("ghost_profiles").select("profile_id"),
       ]);
       if (seasonRes.error) throw seasonRes.error;
       if (playersRes.error) throw playersRes.error;
       if (baselinesRes.error) throw baselinesRes.error;
+      if (ghostsRes.error) throw ghostsRes.error;
 
       const seasonId = seasonRes.data as string | null;
       const baselines = (baselinesRes.data as SeasonBaseline[]).filter(
         (b) => b.season_id === seasonId
       );
+      // Imported ghosts already carry their 2026 baseline (seeded in SQL) and
+      // shouldn't clutter this hand-entry list; they surface on Connections.
+      const ghostIds = new Set(
+        (ghostsRes.data as { profile_id: string }[]).map((g) => g.profile_id)
+      );
       return {
         seasonId,
-        players: playersRes.data as Profile[],
+        players: (playersRes.data as Profile[]).filter((p) => !ghostIds.has(p.id)),
         byUser: new Map(baselines.map((b) => [b.user_id, b])),
       };
     },

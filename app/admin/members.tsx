@@ -37,13 +37,23 @@ export default function AdminMembers() {
   const { data, isLoading, refetch, isRefetching } = useQuery({
     queryKey: ["admin-members", filter],
     queryFn: async (): Promise<Profile[]> => {
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("status", filter)
-        .order("created_at", { ascending: true });
-      if (error) throw error;
-      return data as Profile[];
+      // Ghost profiles are status='active' too, so they'd otherwise flood the
+      // "active" queue. Exclude anything with a ghost_profiles row — those live
+      // on the Connections screen, not here. (A no-op for non-active filters.)
+      const [membersRes, ghostsRes] = await Promise.all([
+        supabase
+          .from("profiles")
+          .select("*")
+          .eq("status", filter)
+          .order("created_at", { ascending: true }),
+        supabase.from("ghost_profiles").select("profile_id"),
+      ]);
+      if (membersRes.error) throw membersRes.error;
+      if (ghostsRes.error) throw ghostsRes.error;
+      const ghostIds = new Set(
+        (ghostsRes.data as { profile_id: string }[]).map((g) => g.profile_id)
+      );
+      return (membersRes.data as Profile[]).filter((p) => !ghostIds.has(p.id));
     },
   });
 

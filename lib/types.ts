@@ -221,3 +221,32 @@ export type MemberRef = {
   id: string;
   display_name: string;
 };
+
+// ── Ghost players (phase 7) ─────────────────────────────────────────────────
+
+// Provenance for a claimable "ghost" profile — a profiles row with no auth user
+// behind it. A row EXISTS here iff the profile is an unclaimed ghost; claiming
+// (claim_ghost) deletes it, so this table is exactly the set of live ghosts.
+export type GhostProfile = {
+  profile_id: string;
+  canonical_name: string;
+  nicknames: string | null;
+  tentative_email: string | null;
+  approx_appearances: number | null;
+  notes: string | null;
+  created_at: string;
+};
+
+// One row of the list_claim_candidates() RPC: a real, not-yet-claimed signup
+// paired with the best-guess ghost to merge it into. The RPC only returns
+// signups that matched a ghost (by email, then name), so suggested_ghost is
+// always present here — unmatched signups are surfaced client-side instead.
+export type ClaimCandidate = {
+  real_id: string;
+  real_name: string;
+  real_email: string;
+  real_status: ProfileStatus;
+  suggested_ghost: string;
+  suggested_name: string;
+  match_by: "email" | "name";
+};
