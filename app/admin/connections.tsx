@@ -1,7 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
-import { Alert, FlatList, Pressable, Text, TextInput, View } from "react-native";
+import { FlatList, Pressable, Text, TextInput, View } from "react-native";
 import { MarqueeSpinner } from "@/components/motif";
+import { confirmDestructive, notify } from "@/lib/dialogs";
 import {
   Badge,
   Button,
@@ -97,21 +98,15 @@ export default function AdminConnections() {
       qc.invalidateQueries({ queryKey: ["leaderboard"] });
     },
     onError: (e: unknown) =>
-      Alert.alert("Link failed", e instanceof Error ? e.message : String(e)),
+      notify("Link failed", e instanceof Error ? e.message : String(e)),
   });
 
   const confirmClaim = (realName: string, ghostName: string, real: string, ghost: string) =>
-    Alert.alert(
+    confirmDestructive(
       "Link accounts?",
       `Merge ${ghostName}'s history into ${realName} and remove the ghost. This can't be undone.`,
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Link",
-          style: "destructive",
-          onPress: () => claim.mutate({ real, ghost }),
-        },
-      ]
+      "Link",
+      () => claim.mutate({ real, ghost })
     );
 
   if (isLoading) {
