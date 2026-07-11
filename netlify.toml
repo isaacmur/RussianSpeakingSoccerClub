@@ -1,0 +1,15 @@
+[build]
+  command = "npx expo export --platform web"
+  publish = "dist"
+
+[build.environment]
+  # Expo SDK 52 targets Node 18–22; pin an LTS so Netlify doesn't pick an untested version.
+  NODE_VERSION = "20"
+
+# SPA fallback: Netlify serves existing static files first (index.html, sign-in.html,
+# admin/*, etc.), then rewrites any unmatched path — the dynamic [id] routes and
+# deep links / refreshes — to the app so expo-router can resolve them client-side.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
