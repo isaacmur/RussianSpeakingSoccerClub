@@ -4,6 +4,7 @@ import { Alert, FlatList, Text, View } from "react-native";
 import { MarqueeSpinner } from "@/components/motif";
 import {
   ActionChip,
+  BackButton,
   Card,
   EmptyState,
   FilterPill,
@@ -82,6 +83,7 @@ export default function AdminMembers() {
 
   return (
     <Screen>
+      <BackButton />
       <View className="pt-1">
         <Heading kicker={count > 0 ? `${count} ${filter}` : "Admin"}>Members</Heading>
       </View>

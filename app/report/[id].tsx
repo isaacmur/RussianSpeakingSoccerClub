@@ -3,6 +3,7 @@ import { Stack, useLocalSearchParams } from "expo-router";
 import { ScrollView, Text, View } from "react-native";
 import { MarqueeSpinner } from "@/components/motif";
 import {
+  BackButton,
   BulbString,
   Card,
   Heading,
@@ -48,6 +49,7 @@ export default function ReportDetail() {
     return (
       <Screen>
         <Stack.Screen options={{ title: "Report" }} />
+        <BackButton />
         <View className="flex-1 items-center justify-center">
           <Subtle>This report couldn&apos;t be loaded.</Subtle>
         </View>
@@ -62,6 +64,7 @@ export default function ReportDetail() {
   return (
     <Screen>
       <Stack.Screen options={{ title: matchLabel(game.kickoff_at) }} />
+      <BackButton />
       <ScrollView
         contentContainerClassName="gap-5 py-4"
         showsVerticalScrollIndicator={false}

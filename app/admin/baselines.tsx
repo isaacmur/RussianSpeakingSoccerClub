@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Alert, FlatList, Pressable, Text, TextInput, View } from "react-native";
 import { MarqueeSpinner } from "@/components/motif";
 import {
+  BackButton,
   Button,
   Card,
   EmptyState,
@@ -117,6 +118,7 @@ export default function AdminBaselines() {
 
   return (
     <Screen>
+      <BackButton />
       <View className="pt-1">
         <Heading kicker="Pre-app history">Baselines</Heading>
       </View>

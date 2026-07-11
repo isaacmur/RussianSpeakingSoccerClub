@@ -1,7 +1,9 @@
 // Boardwalk After Dark — primitives.
 // Tokens: lib/theme.ts · Motifs: components/motif.tsx · Rationale: DESIGN_SYSTEM_PLAN.md
 
+import Feather from "@expo/vector-icons/Feather";
 import * as Haptics from "expo-haptics";
+import { useRouter } from "expo-router";
 import {
   Platform,
   Pressable,
@@ -366,6 +368,31 @@ export function SignOutLink({ onPress }: { onPress: () => void }) {
     <Pressable onPress={onPress} hitSlop={12} className="pt-1">
       <Text className="font-display-semi text-xs uppercase tracking-wider text-steel">
         Sign out
+      </Text>
+    </Pressable>
+  );
+}
+
+// ── BackButton ────────────────────────────────────────────────────────────
+// An explicit in-content way off any pushed screen (game, report, admin). The
+// native stack header carries a back arrow too, but on web that arrow is easy
+// to miss — this puts a labelled control in the content itself. Falls back to
+// the entry route when there's nothing to pop (e.g. a deep link opened cold).
+export function BackButton({ label = "Back" }: { label?: string }) {
+  const router = useRouter();
+  return (
+    <Pressable
+      onPress={() => {
+        buzzSelect();
+        if (router.canGoBack()) router.back();
+        else router.replace("/");
+      }}
+      hitSlop={12}
+      className="-ml-1 flex-row items-center gap-1 self-start py-1"
+    >
+      <Feather name="chevron-left" size={18} color={palette.steel} />
+      <Text className="font-display-semi text-xs uppercase tracking-wider text-steel">
+        {label}
       </Text>
     </Pressable>
   );

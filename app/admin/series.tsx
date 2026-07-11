@@ -4,6 +4,7 @@ import { ScrollView, Text, View } from "react-native";
 import { MarqueeSpinner } from "@/components/motif";
 import {
   ActionChip,
+  BackButton,
   BulbString,
   Button,
   Card,
@@ -118,6 +119,7 @@ export default function AdminSeries() {
 
   return (
     <Screen>
+      <BackButton />
       <ScrollView contentContainerClassName="gap-5 py-3" showsVerticalScrollIndicator={false}>
         <Heading kicker="Recurring fixtures">Series</Heading>
 

@@ -4,6 +4,7 @@ import { FlatList, Pressable, Text, TextInput, View } from "react-native";
 import { MarqueeSpinner } from "@/components/motif";
 import { confirmDestructive, notify } from "@/lib/dialogs";
 import {
+  BackButton,
   Badge,
   Button,
   Card,
@@ -141,6 +142,7 @@ export default function AdminConnections() {
 
   return (
     <Screen>
+      <BackButton />
       <View className="pt-1">
         <Heading kicker={`${ghosts.length} unclaimed`}>Connections</Heading>
       </View>

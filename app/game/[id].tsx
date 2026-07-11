@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Alert, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { MarqueeSpinner, WonderWheel } from "@/components/motif";
 import {
+  BackButton,
   Badge,
   BulbString,
   Button,
@@ -170,6 +171,7 @@ export default function GameDetail() {
     return (
       <Screen>
         <Stack.Screen options={{ title: "Game" }} />
+        <BackButton />
         <View className="flex-1 items-center justify-center">
           <Subtle>This game couldn&apos;t be loaded.</Subtle>
         </View>
@@ -199,6 +201,7 @@ export default function GameDetail() {
   return (
     <Screen>
       <Stack.Screen options={{ title: matchLabel(game.kickoff_at) }} />
+      <BackButton />
       <ScrollView contentContainerClassName="gap-5 py-4" showsVerticalScrollIndicator={false}>
         {/* Header — the kicker promotes the kickoff time out of body copy. */}
         <View className="gap-2">

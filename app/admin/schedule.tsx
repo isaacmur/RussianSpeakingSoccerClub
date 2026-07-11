@@ -5,6 +5,7 @@ import { FlatList, Pressable, Text, View } from "react-native";
 import { MarqueeSpinner } from "@/components/motif";
 import {
   ActionChip,
+  BackButton,
   Button,
   Card,
   EmptyState,
@@ -155,6 +156,7 @@ export default function AdminSchedule() {
 
   return (
     <Screen>
+      <BackButton />
       <View className="pt-1">
         <Heading kicker={count > 0 ? `${count} upcoming` : "Admin"}>Schedule</Heading>
       </View>

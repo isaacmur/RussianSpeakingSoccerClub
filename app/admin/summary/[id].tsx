@@ -3,7 +3,16 @@ import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
 import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { MarqueeSpinner } from "@/components/motif";
-import { Button, Card, Heading, Label, Num, Screen, Subtle } from "@/components/ui";
+import {
+  BackButton,
+  Button,
+  Card,
+  Heading,
+  Label,
+  Num,
+  Screen,
+  Subtle,
+} from "@/components/ui";
 import { notify } from "@/lib/dialogs";
 import { formatKickoff, matchLabel } from "@/lib/format";
 import { supabase } from "@/lib/supabase";
@@ -183,6 +192,7 @@ export default function AdminSummary() {
   return (
     <Screen fence={false}>
       <Stack.Screen options={{ title: "Enter result" }} />
+      <BackButton />
       <ScrollView
         contentContainerClassName="gap-5 py-4"
         showsVerticalScrollIndicator={false}
