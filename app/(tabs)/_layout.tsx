@@ -1,5 +1,6 @@
 import Feather from "@expo/vector-icons/Feather";
 import { Tabs } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNotificationsChannel, useUnreadCount } from "@/lib/notifications";
 import { fonts, palette } from "@/lib/theme";
 
@@ -28,6 +29,10 @@ export default function TabsLayout() {
   // push-token capture.
   useNotificationsChannel();
   const unread = useUnreadCount();
+  // The tab bar sits flush against the screen edge. Without reserving the bottom
+  // safe-area inset (home indicator on iOS, browser/PWA chrome on web) the
+  // labels get clipped at the bottom edge, so pad the bar by the inset.
+  const insets = useSafeAreaInsets();
 
   return (
     <Tabs
@@ -39,6 +44,9 @@ export default function TabsLayout() {
           backgroundColor: palette.night,
           borderTopColor: palette.line,
           borderTopWidth: 1,
+          height: 56 + insets.bottom,
+          paddingBottom: insets.bottom + 6,
+          paddingTop: 6,
         },
         tabBarLabelStyle: {
           fontFamily: fonts.displaySemi,

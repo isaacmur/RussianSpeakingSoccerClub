@@ -173,7 +173,7 @@ function TableHeader({ board }: { board: Board }) {
           <View className="w-8 items-center">
             <Label>P</Label>
           </View>
-          <View className="w-16 items-center">
+          <View className="w-20 items-center">
             <Label>W-D-L</Label>
           </View>
           <View className="w-12 items-end">
@@ -229,7 +229,10 @@ function Row({
           <Num className="w-8 text-center font-body text-base text-bone">
             {row.games_played}
           </Num>
-          <Num className="w-16 text-center font-body text-base text-steel">
+          <Num
+            className="w-20 text-center font-body text-base text-steel"
+            numberOfLines={1}
+          >
             {row.wins}-{row.draws}-{row.losses}
           </Num>
           <Num
