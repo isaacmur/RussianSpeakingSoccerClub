@@ -90,8 +90,10 @@ function RouteGuard() {
       allowed.add("report");
     }
     if (profile.status === "active") {
-      // Active members can open the shared game-detail stack.
+      // Active members can open the shared game-detail stack and their
+      // past-matches history.
       allowed.add("game");
+      allowed.add("past");
       if (profile.role === "admin") allowed.add("admin");
     }
     // No group means the bare index route — its spinner is only a hand-off,

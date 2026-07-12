@@ -47,6 +47,21 @@ export function formatKickoff(iso: string): string {
   return `${date} · ${time} ET`;
 }
 
+// The weekend bucket a kickoff falls in, computed in league time so it matches
+// the date shown by matchLabel/formatKickoff regardless of device timezone.
+// Feeds the Past Matches filter — Saturday and Sunday are the club's two weekend
+// slots; anything else is "Weekday".
+export type MatchDayGroup = "Saturday" | "Sunday" | "Weekday";
+export function matchDayGroup(iso: string): MatchDayGroup {
+  const weekday = new Date(iso).toLocaleDateString("en-US", {
+    weekday: "long",
+    timeZone: LEAGUE_TZ,
+  });
+  if (weekday === "Saturday") return "Saturday";
+  if (weekday === "Sunday") return "Sunday";
+  return "Weekday";
+}
+
 // Compact relative timestamp for feed rows: "now", "5m", "3h", "2d", then a
 // plain date once it's over a week old. No " ago" suffix — the column is
 // narrow and the context (a feed) already says it.
