@@ -136,11 +136,14 @@ export default function AdminSchedule() {
     mutationFn: async ({ id, status }: { id: string; status: GameStatus }) => {
       const { error } = await supabase.from("games").update({ status }).eq("id", id);
       if (error) throw error;
-      // Opening registration by hand must enqueue its notifications now, not on
-      // the next 5-min cron tick. notify_registration_open() is admin-guarded
-      // and dedupes per game, so this is safe to call immediately.
+      // Opening/closing registration by hand must enqueue its notifications
+      // now, not on the next 5-min cron tick. Both fan-out functions are
+      // admin-guarded and dedupe per game, so they're safe to call immediately.
       if (status === "registration_open") {
         const { error: notifyErr } = await supabase.rpc("notify_registration_open");
+        if (notifyErr) throw notifyErr;
+      } else if (status === "locked") {
+        const { error: notifyErr } = await supabase.rpc("notify_registration_closed");
         if (notifyErr) throw notifyErr;
       }
     },
