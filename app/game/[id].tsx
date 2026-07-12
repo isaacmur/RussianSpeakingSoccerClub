@@ -187,6 +187,13 @@ export default function GameDetail() {
 
   const spotsLeft = Math.max(0, game.capacity - registered.length);
   const beforeKickoff = new Date(game.kickoff_at).getTime() > Date.now();
+  // A result can be entered/edited once there's a score to record: the game is
+  // locked/underway/over, or kickoff has simply passed. Mirrors schedule.tsx.
+  const canEnterResult =
+    game.status === "locked" ||
+    game.status === "in_progress" ||
+    game.status === "completed" ||
+    (game.status !== "cancelled" && !beforeKickoff);
   const canModify =
     beforeKickoff &&
     (game.status === "registration_open" || game.status === "filled");
@@ -210,6 +217,22 @@ export default function GameDetail() {
             <StatusChip label={status.label} tone={status.tone} />
             {game.location ? <Subtle>· {game.location}</Subtle> : null}
           </View>
+          {isAdmin ? (
+            <View className="flex-row gap-3">
+              <View className="flex-1">
+                <Link href={{ pathname: "/admin/game/[id]", params: { id } }} asChild>
+                  <Button title="Edit game" variant="ghost" />
+                </Link>
+              </View>
+              {canEnterResult ? (
+                <View className="flex-1">
+                  <Link href={{ pathname: "/admin/summary/[id]", params: { id } }} asChild>
+                    <Button title="Edit result" variant="ghost" />
+                  </Link>
+                </View>
+              ) : null}
+            </View>
+          ) : null}
         </View>
 
         {/* The Wonder Wheel: one cabin per roster spot. Capacity read as a shape.

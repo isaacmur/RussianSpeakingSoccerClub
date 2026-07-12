@@ -1,10 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
-import { Stack, useLocalSearchParams } from "expo-router";
+import { Link, Stack, useLocalSearchParams } from "expo-router";
 import { ScrollView, Text, View } from "react-native";
 import { MarqueeSpinner } from "@/components/motif";
 import {
   BackButton,
   BulbString,
+  Button,
   Card,
   Heading,
   Label,
@@ -12,6 +13,7 @@ import {
   Screen,
   Subtle,
 } from "@/components/ui";
+import { useAuth } from "@/lib/auth";
 import { formatKickoff, matchLabel } from "@/lib/format";
 import { supabase } from "@/lib/supabase";
 import { palette } from "@/lib/theme";
@@ -19,6 +21,8 @@ import { MatchReport, ReportRosterEntry } from "@/lib/types";
 
 export default function ReportDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  const { profile } = useAuth();
+  const isAdmin = profile?.role === "admin";
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ["report", id],
@@ -70,6 +74,21 @@ export default function ReportDetail() {
         showsVerticalScrollIndicator={false}
       >
         <Heading kicker={formatKickoff(game.kickoff_at)}>{matchLabel(game.kickoff_at)}</Heading>
+
+        {isAdmin ? (
+          <View className="flex-row gap-3">
+            <View className="flex-1">
+              <Link href={{ pathname: "/admin/summary/[id]", params: { id } }} asChild>
+                <Button title="Edit result" variant="ghost" />
+              </Link>
+            </View>
+            <View className="flex-1">
+              <Link href={{ pathname: "/admin/game/[id]", params: { id } }} asChild>
+                <Button title="Edit game" variant="ghost" />
+              </Link>
+            </View>
+          </View>
+        ) : null}
 
         {result ? (
           <>

@@ -24,6 +24,7 @@ export default function AdminLayout() {
       <Stack.Screen name="baselines" options={{ title: "Baselines" }} />
       <Stack.Screen name="series" options={{ title: "Series" }} />
       <Stack.Screen name="schedule" options={{ title: "Schedule" }} />
+      <Stack.Screen name="game/[id]" options={{ title: "Edit game" }} />
       <Stack.Screen name="summary/[id]" options={{ title: "Enter result" }} />
     </Stack>
   );

@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { MarqueeSpinner } from "@/components/motif";
 import {
+  Badge,
   BackButton,
   Button,
   Card,
@@ -77,6 +78,19 @@ export default function AdminSummary() {
 
   const game = data?.game ?? null;
 
+  // Which profiles are ghosts (no app account) — to tag walk-ups in the add
+  // picker, since attendance often includes players without a login.
+  const ghostIdsQ = useQuery({
+    queryKey: ["ghost-ids"],
+    queryFn: async (): Promise<Set<string>> => {
+      const { data, error } = await supabase
+        .from("ghost_profiles")
+        .select("profile_id");
+      if (error) throw error;
+      return new Set((data as { profile_id: string }[]).map((g) => g.profile_id));
+    },
+  });
+
   // Seed the form once from the loaded bundle. A later refetch must not clobber
   // unsaved edits, so this is gated on `hydrated`.
   useEffect(() => {
@@ -119,6 +133,15 @@ export default function AdminSummary() {
       )
     );
 
+  // A walk-up who showed up but never signed up. Appended unassigned; the admin
+  // gives them a side, and submit_match_result upserts their registration.
+  const addAttendee = (user_id: string, display_name: string) =>
+    setPlayers((prev) =>
+      prev.some((p) => p.user_id === user_id)
+        ? prev
+        : [...prev, { user_id, display_name, team: null, goals: 0 }]
+    );
+
   // Live A/B goal tally from per-scorer counts — a cross-check against the
   // scoreline the admin punched in (they can legitimately differ: own goals).
   const goalTally = useMemo(() => {
@@ -133,9 +156,11 @@ export default function AdminSummary() {
 
   const submit = useMutation({
     mutationFn: async () => {
-      const teams = players
-        .filter((p) => p.team !== null)
-        .map((p) => ({ user_id: p.user_id, team: p.team }));
+      // Send the FULL roster, including unassigned players: submit_match_result
+      // treats the payload as authoritative, so a null team clears a no-show and
+      // an added walk-up gets a registered row. Filtering here would leave both
+      // stale in the database.
+      const teams = players.map((p) => ({ user_id: p.user_id, team: p.team }));
       const goals = players
         .filter((p) => p.team !== null && p.goals > 0)
         .map((p) => ({ scorer_id: p.user_id, team: p.team, count: p.goals }));
@@ -254,6 +279,16 @@ export default function AdminSummary() {
               ))}
             </Card>
           )}
+
+          <AddAttendee
+            excludeIds={new Set(players.map((p) => p.user_id))}
+            ghostIds={ghostIdsQ.data ?? new Set()}
+            onAdd={addAttendee}
+          />
+          <Subtle>
+            Someone didn&apos;t show? Leave them with no side — they won&apos;t
+            count. Extra players? Add them above.
+          </Subtle>
           {tallyMismatch ? (
             <Subtle>
               Per-scorer goals don&apos;t sum to the final score — fine for own
@@ -385,5 +420,98 @@ function SideToggle({
         {label}
       </Text>
     </Pressable>
+  );
+}
+
+// ── Add a walk-up ───────────────────────────────────────────────────────────
+// Search every active profile (members + ghosts) and drop one who showed up but
+// never signed up onto the team sheet. Mirrors the game-detail add picker.
+type RosterEntry = { id: string; display_name: string };
+
+function AddAttendee({
+  excludeIds,
+  ghostIds,
+  onAdd,
+}: {
+  excludeIds: Set<string>;
+  ghostIds: Set<string>;
+  onAdd: (userId: string, displayName: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [q, setQ] = useState("");
+
+  const rosterQ = useQuery<RosterEntry[]>({
+    queryKey: ["eligible-roster"],
+    enabled: open,
+    queryFn: async (): Promise<RosterEntry[]> => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("id, display_name")
+        .eq("status", "active")
+        .order("display_name", { ascending: true });
+      if (error) throw error;
+      return data as RosterEntry[];
+    },
+  });
+
+  const matches = useMemo(() => {
+    const needle = q.trim().toLowerCase();
+    const all: RosterEntry[] = rosterQ.data ?? [];
+    const list = all.filter((p: RosterEntry) => !excludeIds.has(p.id));
+    const filtered = needle
+      ? list.filter((p: RosterEntry) =>
+          p.display_name.toLowerCase().includes(needle)
+        )
+      : list;
+    return filtered.slice(0, 40);
+  }, [rosterQ.data, excludeIds, q]);
+
+  return (
+    <Card className="gap-3 p-4">
+      <Pressable
+        onPress={() => setOpen((o) => !o)}
+        className="flex-row items-center justify-between"
+      >
+        <Text className="font-display text-base uppercase tracking-wide text-luna">
+          Add player who showed up
+        </Text>
+        <Text className="font-display-semi text-xs uppercase tracking-wider text-steel">
+          {open ? "Close" : "Open"}
+        </Text>
+      </Pressable>
+
+      {open ? (
+        <View className="gap-2">
+          <TextInput
+            value={q}
+            onChangeText={setQ}
+            placeholder="Search players…"
+            placeholderTextColor={palette.steel}
+            autoCorrect={false}
+            className="h-11 rounded-lg border border-line bg-night px-3 font-body text-base text-bone"
+          />
+          {rosterQ.isLoading ? (
+            <Subtle>Loading roster…</Subtle>
+          ) : matches.length === 0 ? (
+            <Subtle>No players{q ? ` for “${q}”` : ""}.</Subtle>
+          ) : (
+            matches.map((p) => (
+              <Pressable
+                key={p.id}
+                onPress={() => onAdd(p.id, p.display_name)}
+                className="flex-row items-center justify-between rounded-lg border border-line bg-night px-3 py-2.5"
+              >
+                <Text className="font-body text-base text-bone">
+                  {p.display_name}
+                </Text>
+                {ghostIds.has(p.id) ? (
+                  <Badge color={palette.steel}>no app</Badge>
+                ) : null}
+              </Pressable>
+            ))
+          )}
+        </View>
+      ) : null}
+    </Card>
   );
 }
