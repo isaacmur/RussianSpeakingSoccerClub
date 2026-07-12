@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { useFocusEffect } from "expo-router";
+import { Link, useFocusEffect } from "expo-router";
 import { useCallback, useMemo, useState } from "react";
 import { FlatList, Pressable, Text, View } from "react-native";
 import { MarqueeSpinner } from "@/components/motif";
@@ -51,6 +51,11 @@ export function Leaderboard() {
     }, [refetch])
   );
 
+  // Only the read tiers that can open a match report (active + viewer) get
+  // tappable rows — pending/rejected can see the standings but no match data,
+  // so their rows stay inert. Mirrors the RouteGuard gate on the "player" group.
+  const clickable = profile?.status === "active" || profile?.status === "viewer";
+
   // The RPC returns rows sorted by plus_minus; Golden Boot re-sorts by goals.
   const rows = useMemo(() => {
     const list = [...(data ?? [])];
@@ -95,6 +100,7 @@ export function Leaderboard() {
             rank={index + 1}
             board={board}
             isYou={item.user_id === profile?.id}
+            clickable={clickable}
           />
         )}
       />
@@ -190,17 +196,19 @@ function Row({
   rank,
   board,
   isYou,
+  clickable,
 }: {
   row: LeaderboardRow;
   rank: number;
   board: Board;
   isYou: boolean;
+  clickable: boolean;
 }) {
   // Boardwalk plank rhythm — alternating board joints underfoot. Deliberately
   // at the edge of perception; it should feel like a surface, not a stripe.
   const plank = rank % 2 === 0 ? "bg-plank/40" : "";
 
-  return (
+  const body = (
     <View
       className={`flex-row items-center border-b border-line/40 px-2 py-3 ${plank} ${
         isYou ? "bg-wonder/10" : ""
@@ -251,5 +259,19 @@ function Row({
         </>
       )}
     </View>
+  );
+
+  if (!clickable) return body;
+
+  return (
+    <Link
+      href={{
+        pathname: "/player/[id]",
+        params: { id: row.user_id, name: row.display_name },
+      }}
+      asChild
+    >
+      <Pressable>{body}</Pressable>
+    </Link>
   );
 }

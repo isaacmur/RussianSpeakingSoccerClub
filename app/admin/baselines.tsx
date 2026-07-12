@@ -17,12 +17,12 @@ import { supabase } from "@/lib/supabase";
 import { palette, tabularNums } from "@/lib/theme";
 import { BaselineStats, Profile, SeasonBaseline } from "@/lib/types";
 
+// +/- is a derived value (wins − losses), so it isn't hand-entered here.
 const STAT_FIELDS: { key: keyof BaselineStats; label: string }[] = [
   { key: "games_played", label: "Played" },
   { key: "wins", label: "Wins" },
   { key: "draws", label: "Draws" },
   { key: "losses", label: "Losses" },
-  { key: "plus_minus", label: "+/-" },
   { key: "goals", label: "Goals" },
 ];
 
@@ -188,8 +188,8 @@ function PlayerBaseline({
           {hasBaseline ? (
             <Num className="font-body text-sm text-steel">
               P{saved.games_played} · {saved.wins}-{saved.draws}-{saved.losses} ·{" "}
-              {saved.plus_minus > 0 ? "+" : ""}
-              {saved.plus_minus} · {saved.goals} gls
+              {saved.wins - saved.losses > 0 ? "+" : ""}
+              {saved.wins - saved.losses} · {saved.goals} gls
             </Num>
           ) : (
             <Subtle>No baseline set</Subtle>

@@ -32,6 +32,7 @@ type PrefKey = keyof Omit<NotificationPrefs, "user_id">;
 // design — being pulled off the waitlist always notifies.
 const PREF_ITEMS: { key: PrefKey; label: string }[] = [
   { key: "registration_open", label: "Registration opens" },
+  { key: "registration_closed", label: "Registration closes" },
   { key: "game_filled", label: "Game filled" },
   { key: "needs_players", label: "Needs players" },
   { key: "kickoff_reminder", label: "Kickoff reminder" },

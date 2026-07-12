@@ -35,6 +35,7 @@ const FROM_NAME = Deno.env.get("NOTIFY_FROM_NAME") ?? "Weekend League";
 // it always sends. Types missing a pref column also always send.
 const PREF_COLUMN: Record<string, string> = {
   registration_open: "registration_open",
+  registration_closed: "registration_closed",
   game_filled: "game_filled",
   needs_players: "needs_players",
   kickoff_reminder: "kickoff_reminder",

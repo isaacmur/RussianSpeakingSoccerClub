@@ -1,3 +1,4 @@
+import Feather from "@expo/vector-icons/Feather";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useFocusEffect } from "expo-router";
 import { useCallback } from "react";
@@ -6,6 +7,7 @@ import { MarqueeSpinner } from "@/components/motif";
 import { Card, EmptyState, Heading, Num, Screen, StatusChip, Subtle } from "@/components/ui";
 import { formatKickoff, matchLabel, statusLabel } from "@/lib/format";
 import { supabase } from "@/lib/supabase";
+import { palette } from "@/lib/theme";
 import { Game } from "@/lib/types";
 
 export default function Matchday() {
@@ -32,8 +34,16 @@ export default function Matchday() {
 
   return (
     <Screen>
-      <View className="pt-1">
+      <View className="flex-row items-start justify-between pt-1">
         <Heading kicker="Kaiser Park · Brooklyn">Matchday</Heading>
+        <Link href="/past" asChild>
+          <Pressable hitSlop={12} className="flex-row items-center gap-1 pt-1">
+            <Text className="font-display-semi text-xs uppercase tracking-wider text-steel">
+              Past matches
+            </Text>
+            <Feather name="chevron-right" size={14} color={palette.steel} />
+          </Pressable>
+        </Link>
       </View>
 
       {isLoading ? (

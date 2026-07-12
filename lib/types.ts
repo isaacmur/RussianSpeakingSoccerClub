@@ -87,6 +87,7 @@ export type SeasonBaseline = BaselineStats & {
 // phases 5–6; the center renders them generically either way.
 export type NotificationType =
   | "registration_open"
+  | "registration_closed"
   | "game_filled"
   | "needs_players"
   | "spot_opened"
@@ -107,11 +108,14 @@ export type AppNotification = {
   created_at: string;
 };
 
-// One row per user; every column defaults true. `spot_opened` has no toggle by
-// design — waitlist promotion is about your own registration.
+// One row per user. New rows default on for registration_open,
+// registration_closed, and results_posted; the rest default off (see 0017).
+// `spot_opened` has no toggle by design — waitlist promotion is about your own
+// registration.
 export type NotificationPrefs = {
   user_id: string;
   registration_open: boolean;
+  registration_closed: boolean;
   game_filled: boolean;
   needs_players: boolean;
   kickoff_reminder: boolean;
@@ -184,6 +188,15 @@ export type MatchReportSummary = {
   team_a_score: number;
   team_b_score: number;
   summary: string | null;
+};
+
+// One row of get_player_match_history() — a match a given player played, with
+// their side, goals, and outcome, for the per-player history opened from the
+// leaderboard. Extends the report summary shape so it can reuse ReportCard.
+export type PlayerMatchHistoryEntry = MatchReportSummary & {
+  team: "A" | "B";
+  goals: number;
+  outcome: "win" | "draw" | "loss";
 };
 
 // ── Messaging (phase 6) ─────────────────────────────────────────────────────

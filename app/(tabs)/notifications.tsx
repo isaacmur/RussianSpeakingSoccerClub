@@ -17,6 +17,7 @@ import { AppNotification, NotificationType } from "@/lib/types";
 // lamplight (reminders, results). Never text in `cyclone` — dots are fills.
 const TYPE_DOT: Record<NotificationType, string> = {
   registration_open: palette.wonder,
+  registration_closed: palette.cyclone,
   game_filled: palette.cyclone,
   needs_players: palette.cyclone,
   spot_opened: palette.ferris,
