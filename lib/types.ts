@@ -190,6 +190,15 @@ export type MatchReportSummary = {
   summary: string | null;
 };
 
+// One row of get_player_match_history() — a match a given player played, with
+// their side, goals, and outcome, for the per-player history opened from the
+// leaderboard. Extends the report summary shape so it can reuse ReportCard.
+export type PlayerMatchHistoryEntry = MatchReportSummary & {
+  team: "A" | "B";
+  goals: number;
+  outcome: "win" | "draw" | "loss";
+};
+
 // ── Messaging (phase 6) ─────────────────────────────────────────────────────
 
 export type ChannelKind = "league" | "game";

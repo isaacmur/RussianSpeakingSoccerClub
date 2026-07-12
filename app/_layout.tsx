@@ -5,7 +5,7 @@ import { Oswald_600SemiBold } from "@expo-google-fonts/oswald/600SemiBold";
 import { Oswald_700Bold } from "@expo-google-fonts/oswald/700Bold";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useFonts } from "expo-font";
-import { Slot, useRouter, useSegments } from "expo-router";
+import { Stack, useRouter, useSegments } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
 import { useCallback, useEffect } from "react";
@@ -14,6 +14,7 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { MarqueeSpinner } from "@/components/motif";
 import { useAuth, AuthProvider } from "@/lib/auth";
+import { palette } from "@/lib/theme";
 import { ProfileStatus } from "@/lib/types";
 
 // Hold the native splash until the fonts are in memory. Without this the app
@@ -85,9 +86,11 @@ function RouteGuard() {
     // Admins may roam the admin stack; otherwise keep everyone in their group.
     const allowed = new Set<string>([groupForStatus(profile.status)]);
     // Match reports are read-only and shared by both read tiers — members reach
-    // them from Matchday, report viewers from the Reports tab.
+    // them from Matchday, report viewers from the Reports tab. Per-player match
+    // history (opened by tapping a leaderboard row) is the same read tier.
     if (profile.status === "active" || profile.status === "viewer") {
       allowed.add("report");
+      allowed.add("player");
     }
     if (profile.status === "active") {
       // Active members can open the shared game-detail stack and their
@@ -111,7 +114,21 @@ function RouteGuard() {
     );
   }
 
-  return <Slot />;
+  // A real root Stack (not a Slot) so the route groups share ONE navigation
+  // history. Entering a detail group (game / report / player / past / admin)
+  // pushes over the tab group, which stays mounted underneath with its selected
+  // tab intact — so back pops to exactly where the user came from. A Slot mounts
+  // one group at a time with no cross-group back-stack, which stranded every
+  // "back" on the remounted group's initial tab. Each group owns its own header;
+  // the root shows none.
+  return (
+    <Stack
+      screenOptions={{
+        headerShown: false,
+        contentStyle: { backgroundColor: palette.night },
+      }}
+    />
+  );
 }
 
 export default function RootLayout() {
